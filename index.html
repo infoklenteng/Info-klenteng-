@@ -1,0 +1,58 @@
+
+  
+  <head>
+    <title>Info Klenteng - Direktori Klenteng & Vihara Indonesia</title>
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+</header>
+    <body>
+
+    <header class="main-header">
+        <a href="index.html" class="logo-container">
+            <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span class="logo">Info Klenteng</span>
+        </a>
+        <nav class="main-nav">
+            <a href="#">Tentang Kami</a>
+            <a href="#">Kontak</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <h1>Temukan Vihara & Klenteng di Seluruh Indonesia</h1>
+            <p>Jelajahi kekayaan spiritual dan budaya di sekitar Anda.</p>
+            <input type="text" id="search-bar" class="search-bar" placeholder="Ketik nama klenteng atau kota...">
+        </section>
+
+        <div class="container">
+            <div id="map"></div>
+        </div>
+
+        <div class="container">
+            <section class="curated-lists">
+                <h2>Hasil Pencarian</h2>
+                <div class="card-container">
+                    </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-dragon"></div>
+        <p>&copy; 2025 Info Klenteng. Dibuat dengan semangat Merah Putih.</p>
+        <p>Atribusi data peta kepada kontributor OpenStreetMap.</p>
+    </footer>
+
+    <script src="app.js" type="module"></script>
+
+</body>
+
+
+
+
