@@ -165,3 +165,26 @@ body {
     max-width: 300px;
     height: 250px;
 }
+
+/* =================================
+   Gaya untuk Tampilan Mobile
+   ================================= */
+@media (max-width: 768px) {
+    .main-header {
+        flex-direction: column; /* Ubah arah header menjadi vertikal */
+        gap: 15px; /* Beri jarak antara logo dan menu */
+        padding: 1rem;
+    }
+
+    .main-nav a {
+        margin: 0 10px; /* Perkecil jarak antar menu */
+    }
+
+    .hero-section h1 {
+        font-size: 2.2rem; /* Perkecil ukuran judul utama */
+    }
+
+    #map {
+        height: 300px; /* Perkecil tinggi peta di mobile */
+    }
+}
