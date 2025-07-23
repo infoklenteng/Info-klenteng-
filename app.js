@@ -1,8 +1,10 @@
-// app.js (Versi Bersih)
+// app.js (Versi Lengkap dengan Paginasi)
 
+// Import semua fungsi yang diperlukan, termasuk 'query' dan 'limit'
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc, enableNetwork } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, enableNetwork, query, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// Ganti dengan firebaseConfig dari proyek BARU Anda
 const firebaseConfig = {
   apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
   authDomain: "info-klenteng-df46f.firebaseapp.com",
@@ -12,18 +14,21 @@ const firebaseConfig = {
   appId: "1:416766280539:web:c40c1f7903d87b0558507e",
   measurementId: "G-M21P3MZN96"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 enableNetwork(db); // Paksa koneksi online
 
 // === LOGIKA UNTUK HALAMAN UTAMA (index.html) ===
-let semuaKlenteng = [];
+let semuaKlenteng = []; // Akan menyimpan data yang ditampilkan (dibatasi 50)
 let map; 
 let markers = []; 
 
 const cardContainer = document.querySelector('.card-container');
 const searchBar = document.getElementById('search-bar');
 const mapContainer = document.getElementById('map');
+const hamburgerBtn = document.getElementById('hamburger-btn');
+const navWrapper = document.getElementById('nav-wrapper');
 
 if (cardContainer && searchBar && mapContainer) {
     initMap();
@@ -31,6 +36,7 @@ if (cardContainer && searchBar && mapContainer) {
 
     searchBar.addEventListener('input', (e) => {
         const kataKunci = e.target.value.toLowerCase();
+        // Pencarian akan memfilter dari data yang sudah dimuat (50 data)
         const hasilFilter = semuaKlenteng.filter(klenteng => 
             klenteng.nama.toLowerCase().includes(kataKunci) || klenteng.kota.toLowerCase().includes(kataKunci)
         );
@@ -46,14 +52,21 @@ function initMap() {
     }).addTo(map);
 }
 
+// FUNGSI INI SUDAH DIMODIFIKASI
 async function loadKlentengList() {
     try {
-        const querySnapshot = await getDocs(collection(db, "klenteng"));
+        // Buat kueri untuk mengambil dari collection 'klenteng' dengan batas 50 dokumen
+        const klentengCollection = collection(db, "klenteng");
+        const q = query(klentengCollection, limit(50));
+        
+        // Jalankan kueri yang sudah dibatasi
+        const querySnapshot = await getDocs(q);
+        
         semuaKlenteng = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         displayKlenteng(semuaKlenteng);
     } catch (error) {
         console.error("Error loading klenteng list: ", error);
-        cardContainer.innerHTML = "<p>Gagal memuat data. Cek konsol untuk error.</p>";
+        cardContainer.innerHTML = "<p>Gagal memuat data.</p>";
     }
 }
 
@@ -86,11 +99,18 @@ function createKlentengCard(data, id) {
                 <img src="${data.imageUrl || 'https://via.placeholder.com/300x180.png?text=Info+Klenteng'}" alt="${data.nama}">
                 <div class="info-card-content">
                     <h3>${data.nama}</h3>
-                    <p>${data.kota}, ${data.provinsi}</p>
+                    <p>${data.kota || ''}, ${data.provinsi || ''}</p>
                 </div>
             </div>
         </a>
     `;
+}
+
+// === LOGIKA UNTUK MENU HAMBURGER ===
+if (hamburgerBtn && navWrapper) {
+    hamburgerBtn.addEventListener('click', () => {
+        navWrapper.classList.toggle('is-active');
+    });
 }
 
 // === LOGIKA UNTUK HALAMAN DETAIL (detail.html) ===
@@ -101,7 +121,7 @@ if (detailHeader) {
     if (klentengId) {
         loadKlentengDetail(klentengId);
     } else {
-        document.querySelector('main.container').innerHTML = "<h1>Error: Klenteng tidak ditemukan.</h1><p>ID tidak valid.</p>";
+        document.querySelector('main.container').innerHTML = "<h1>Error: Klenteng tidak ditemukan.</h1>";
     }
 }
 
@@ -112,28 +132,38 @@ async function loadKlentengDetail(id) {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-
+            
             document.title = `${data.nama} - Info Klenteng`;
             document.querySelector('.detail-header h1').textContent = data.nama;
             document.querySelector('.detail-header p').textContent = data.alamat;
-            document.querySelector('.detail-content p').textContent = data.deskripsi;
+            
+            const detailContent = document.querySelector('.detail-content');
+            if (detailContent) {
+                // Tampilkan deskripsi sebagai HTML, bukan teks biasa
+                detailContent.innerHTML = `<h2>Detail</h2>${data.deskripsi || '<p>Tidak ada deskripsi.</p>'}`;
+            }
+
             const detailImage = document.querySelector('.detail-image');
             if(detailImage) detailImage.src = data.imageUrl || 'https://via.placeholder.com/800x400.png?text=Info+Klenteng';
-
+            
             const btnSalin = document.querySelector('.btn-primary');
             const btnMaps = document.querySelector('.btn-secondary');
 
-            btnSalin.addEventListener('click', () => {
-                navigator.clipboard.writeText(data.alamat).then(() => {
-                    btnSalin.textContent = 'Berhasil Disalin!';
-                    setTimeout(() => { btnSalin.textContent = 'Salin Alamat'; }, 2000);
+            if (btnSalin) {
+                btnSalin.addEventListener('click', () => {
+                    navigator.clipboard.writeText(data.alamat).then(() => {
+                        btnSalin.textContent = 'Berhasil Disalin!';
+                        setTimeout(() => { btnSalin.textContent = 'Salin Alamat'; }, 2000);
+                    });
                 });
-            });
+            }
 
-            btnMaps.href = `https://maps.google.com/?q=${encodeURIComponent(data.alamat)}`;
+            if (btnMaps) {
+                btnMaps.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.alamat)}`;
+            }
 
         } else {
-            document.querySelector('main.container').innerHTML = "<h1>Error: Klenteng tidak ditemukan.</h1><p>Data untuk ID ini tidak ada.</p>";
+            document.querySelector('main.container').innerHTML = "<h1>Error: Klenteng tidak ditemukan.</h1>";
         }
     } catch (error) {
         console.error("Error loading klenteng detail: ", error);
