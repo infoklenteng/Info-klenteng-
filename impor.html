@@ -22,9 +22,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // 🔐 Ganti config sesuai proyek Firebase kamu
     const firebaseConfig = {
       apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
       authDomain: "info-klenteng-df46f.firebaseapp.com",
@@ -59,42 +58,44 @@
           const features = geojson.features || [];
           log(`📍 Jumlah fitur: ${features.length}`);
 
-          const batchSize = 400;
-          for (let i = 0; i < features.length; i += batchSize) {
-            const batch = writeBatch(db);
-            const chunk = features.slice(i, i + batchSize);
-            log(`🚚 Memproses batch ${Math.floor(i / batchSize) + 1}`);
+          for (let i = 0; i < features.length; i++) {
+            const f = features[i];
+            const props = f.properties || {};
+            const coords = f.geometry?.coordinates || [];
+            const lon = coords[0];
+            const lat = coords[1];
 
-            chunk.forEach((f, index) => {
-              const props = f.properties || {};
-              const coords = f.geometry?.coordinates || [];
-              const lon = coords[0];
-              const lat = coords[1];
+            if (!props.name || !lat || !lon) {
+              log(`⏭️ Melewati data tidak lengkap (baris ${i + 1})`);
+              continue;
+            }
 
-              if (!props.name || !lat || !lon) return; // skip jika tak lengkap
+            const dataToSave = {
+              nama: props.name || "",
+              alamat: props['addr:full'] || props.address || props['addr:street'] || "",
+              kota: props['addr:city'] || "",
+              provinsi: props['addr:state'] || "",
+              lat: lat,
+              lon: lon,
+              deskripsi: props.description || "",
+              imageUrl: props.image || "",
+              wikipedia: props.wikipedia || "",
+              atribut: props
+            };
 
-              const dataToSave = {
-                nama: props.name || "",
-                alamat: props['addr:full'] || props.address || props['addr:street'] || "",
-                kota: props['addr:city'] || "",
-                provinsi: props['addr:state'] || "",
-                lat: lat,
-                lon: lon,
-                deskripsi: props.description || "",
-                imageUrl: props.image || "",
-                wikipedia: props.wikipedia || "",
-                atribut: props // simpan semua properti asli sebagai objek
-              };
+            const safeId = `${props.name}_${lat}_${lon}`.replace(/\s+/g, "_").replace(/[^\w\-]/g, "_");
+            const docRef = doc(db, "klenteng", safeId);
 
-              const docRef = doc(collection(db, "klenteng"));
-              batch.set(docRef, dataToSave);
-            });
-
-            await batch.commit();
-            log(`✅ Batch ${Math.floor(i / batchSize) + 1} selesai`);
+            const existing = await getDoc(docRef);
+            if (!existing.exists() || JSON.stringify(existing.data()) !== JSON.stringify(dataToSave)) {
+              await setDoc(docRef, dataToSave);
+              log(`✅ Diimpor/Diupdate: ${props.name}`);
+            } else {
+              log(`⏭️ Tidak berubah: ${props.name}`);
+            }
           }
 
-          log("🎉 SEMUA DATA BERHASIL DIIMPOR!");
+          log("🎉 SELESAI! Semua data sudah diproses.");
         } catch (err) {
           console.error(err);
           log("❌ Gagal mengimpor: " + err.message);
