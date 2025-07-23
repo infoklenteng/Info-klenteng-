@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, doc, getDoc, enableNetwork } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyArH0RoIFSblsanJiTKqNdCRqeU31fHjGw", // API Key Anda yang valid
+  apiKey: "AIzaSyDnE-CN7YpFXGUh7qsGjsg8X8HL_dNgRDQ",
   authDomain: "info-klenteng.firebaseapp.com",
   projectId: "info-klenteng",
   storageBucket: "info-klenteng.firebasestorage.app",
