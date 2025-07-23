@@ -23,6 +23,99 @@ const adminContent = document.getElementById('admin-content');
 const loadingMessage = document.getElementById('loading-message');
 
 // =======================================================
+// FUNGSI UNTUK UPLOAD GAMBAR UTAMA KE CLOUDINARY
+// =======================================================
+async function uploadImage(file) {
+    const cloudName = 'duw0uljnq'; // Diambil dari info Anda
+    const uploadPreset = 'info-klenteng'; // Diambil dari info Anda
+    const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Gagal mengupload gambar.');
+        }
+
+        const data = await response.json();
+        return data.secure_url; // Mengembalikan URL gambar yang aman
+    
+    } catch (error) {
+        console.error('Error uploading to Cloudinary:', error);
+        return null;
+    }
+}
+
+
+// ... (kode onAuthStateChanged dan initCMS Anda) ...
+
+// Di dalam fungsi initCMS(), modifikasi event listener untuk form
+function initCMS() {
+    // ... (kode TinyMCE Anda tetap sama) ...
+
+    const klentengForm = document.getElementById('klenteng-form');
+    const imageInput = document.getElementById('main-image');
+
+    klentengForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Ambil file yang dipilih oleh pengguna
+        const file = imageInput.files[0];
+        let imageUrl = ''; // Siapkan variabel untuk URL gambar
+
+        if (file) {
+            // Jika ada file yang dipilih, upload dulu
+            alert('Mengupload gambar utama...');
+            imageUrl = await uploadImage(file);
+            if (!imageUrl) {
+                alert('Upload gambar utama gagal. Proses dibatalkan.');
+                return; // Hentikan proses jika upload gagal
+            }
+            alert('Upload gambar utama berhasil!');
+        }
+
+        // Ambil data lain dari form
+        const nama = document.getElementById('nama').value;
+        const alamat = document.getElementById('alamat').value;
+        const kota = document.getElementById('kota').value;
+        const provinsi = document.getElementById('provinsi').value;
+        const lat = parseFloat(document.getElementById('lat').value);
+
+        const lon = parseFloat(document.getElementById('lon').value);
+        const deskripsi = tinymce.get('deskripsi').getContent();
+
+        try {
+            // Simpan dokumen baru dengan URL gambar dari Cloudinary
+            const docRef = await addDoc(collection(db, "klenteng"), {
+                nama,
+                alamat,
+                kota,
+                provinsi,
+                lat,
+                lon,
+                deskripsi,
+                imageUrl: imageUrl // Gunakan URL dari Cloudinary
+            });
+            
+            alert(`Data klenteng berhasil disimpan dengan ID: ${docRef.id}`);
+            klentengForm.reset();
+            tinymce.get('deskripsi').setContent('');
+            
+        } catch (error) {
+            console.error("Error adding document: ", error);
+            alert("Gagal menyimpan data.");
+        }
+    });
+}
+
+// =======================================================
 // PENJAGA HALAMAN ADMIN
 // =======================================================
 onAuthStateChanged(auth, (user) => {
