@@ -1,26 +1,27 @@
-
-  
-  <head>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Info Klenteng - Direktori Klenteng & Vihara Indonesia</title>
+    
     <link rel="stylesheet" href="style.css">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script src="head_global.js" defer></script>
 </head>
-</header>
-    <body>
+<body>
 
-<header class="main-header">
-    <a href="index.html" class="logo-container">
-        <img src="logo_header.jpg" alt="Info Klenteng Logo" class="logo-image">
-        <span class="logo"></span>
-    </a>
-    <nav class="main-nav">
-        <a href="#">Tentang Kami</a>
-        <a href="#">Kontak</a>
-    </nav>
-</header>
-
+    <header class="main-header">
+        <a href="index.html" class="logo-container">
+            <img src="logo_header.jpg" alt="Info Klenteng Logo" class="logo-image">
+            <span class="logo">Info Klenteng</span>
+        </a>
+        <nav class="main-nav">
+            <a href="#">Tentang Kami</a>
+            <a href="#">Kontak</a>
+        </nav>
+    </header>
 
     <main>
         <section class="hero-section">
@@ -32,12 +33,12 @@
         <div class="container">
             <div id="map"></div>
         </div>
-<div class="container">
-    <div class="ad-space-leaderboard">
-        </div>
-</div>
 
-      
+        <div class="container">
+            <div class="ad-space-leaderboard">
+                </div>
+        </div>
+
         <div class="container">
             <section class="curated-lists">
                 <h2>Hasil Pencarian</h2>
@@ -53,10 +54,8 @@
         <p>Atribusi data peta kepada kontributor OpenStreetMap.</p>
     </footer>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="app.js" type="module"></script>
 
 </body>
-
-
-
-
+</html>
