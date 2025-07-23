@@ -1,5 +1,5 @@
 // =======================================================
-// KODE KHUSUS UNTUK TES - GANTI SEMUA ISI app.js DENGAN INI
+// KODE FINAL DENGAN PERBAIKAN
 // =======================================================
 
 function mobileLog(message, isError = false) {
@@ -16,13 +16,12 @@ function mobileLog(message, isError = false) {
 
 mobileLog("app.js: Memulai mode tes...");
 
+// BARU: Tambahkan 'enableNetwork' di sini
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, enableNetwork } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  // GANTI DENGAN API KEY ANDA YANG VALID
-  apiKey: "AIzaSyArH0RoIFSblsanJiTKqNdCRqeU31fHjGw", 
-  
+  apiKey: "AIzaSyArH0RoIFSblsanJiTKqNdCRqeU31fHjGw", // API Key Anda yang valid
   authDomain: "info-klenteng.firebaseapp.com",
   projectId: "info-klenteng",
   storageBucket: "info-klenteng.firebasestorage.app",
@@ -36,11 +35,14 @@ const db = getFirestore(app);
 mobileLog("app.js: Firebase diinisialisasi.");
 
 // =================================
-// FUNGSI TES
+// BARU: Tambahkan baris ini untuk memaksa koneksi online
+enableNetwork(db);
+mobileLog("app.js: Koneksi jaringan dipaksa aktif.");
 // =================================
+
+
+// FUNGSI TES
 async function testFetchSingleDocument() {
-    // INI ADALAH BAGIAN YANG PERLU ANDA EDIT
-    // Pastikan ID ini sama dengan yang ada di Firestore Anda
     const docId = "C72W92wvi6DILYyyQNZz"; 
 
     mobileLog(`Mencoba mengambil dokumen dengan ID: ${docId}`);
@@ -62,4 +64,3 @@ async function testFetchSingleDocument() {
 
 // Panggil fungsi tes saat halaman dimuat
 testFetchSingleDocument();
- 
