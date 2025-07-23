@@ -188,3 +188,32 @@ body {
         height: 300px; /* Perkecil tinggi peta di mobile */
     }
 }
+
+/* =================================
+   Gaya untuk Mobile Console
+   ================================= */
+#mobile-console {
+    position: fixed; /* Tetap di layar saat scroll */
+    bottom: 10px;
+    left: 10px;
+    width: calc(100% - 20px);
+    max-height: 150px; /* Batasi tinggi agar tidak menutupi layar */
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #00ff00; /* Warna teks hijau seperti terminal */
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-y: auto; /* Bisa di-scroll jika pesannya banyak */
+    z-index: 9999; /* Pastikan selalu di atas elemen lain */
+    border: 1px solid #333;
+}
+#mobile-console p {
+    margin: 0 0 5px 0;
+    padding: 0;
+    border-bottom: 1px solid #333;
+}
+#mobile-console .error {
+    color: #ff4d4d; /* Pesan error akan berwarna merah */
+    font-weight: bold;
+}
