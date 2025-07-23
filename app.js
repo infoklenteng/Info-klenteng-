@@ -4,12 +4,13 @@ import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gsta
 
 // TODO: Ganti dengan konfigurasi proyek Firebase Anda
 const firebaseConfig = {
-  apiKey: "AIzaSy...YOUR_API_KEY",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "1:your-sender-id:web:your-app-id"
+  apiKey: "AIzaSyDnE-CN7YpFXGUh7qsGjsg8X8HL_dNgRDQ",
+  authDomain: "info-klenteng.firebaseapp.com",
+  projectId: "info-klenteng",
+  storageBucket: "info-klenteng.firebasestorage.app",
+  messagingSenderId: "1005532464216",
+  appId: "1:1005532464216:web:8b9ce3edca8325e64a762d",
+  measurementId: "G-XMNTWC5HQD"
 };
 
 // Inisialisasi Firebase

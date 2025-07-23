@@ -142,3 +142,26 @@ body {
 .btn-secondary { background-color: var(--secondary-color); color: white; }
 .btn-secondary:hover { background-color: #e67e22; }
 .detail-content { background: var(--card-bg-color); padding: 2rem; border-radius: 8px; margin-top: 20px; border: 1px solid #eee; }
+
+.logo-image {
+    width: 250px; /* Atur ukuran sesuai selera */
+    height: 85px;
+}
+
+.ad-space-leaderboard, .ad-space-box {
+    background-color: #f0f0f0;
+    text-align: center;
+    padding: 10px;
+    margin: 20px auto;
+    border: 1px dashed #ccc;
+}
+.ad-space-leaderboard {
+    width: 100%;
+    max-width: 728px;
+    height: 90px;
+}
+.ad-space-box {
+    width: 100%;
+    max-width: 300px;
+    height: 250px;
+}
