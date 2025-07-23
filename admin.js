@@ -1,10 +1,10 @@
-// admin.js (Versi Lengkap dengan Perbaikan Final)
+// admin.js (Versi Lengkap dengan Paginasi)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, orderBy, query, limit, startAfter, endBefore, limitToLast, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Ganti dengan firebaseConfig dari PROYEK BARU Anda
+// Ganti dengan firebaseConfig Anda
 const firebaseConfig = {
   apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
   authDomain: "info-klenteng-df46f.firebaseapp.com",
@@ -14,6 +14,7 @@ const firebaseConfig = {
   appId: "1:416766280539:web:c40c1f7903d87b0558507e",
   measurementId: "G-M21P3MZN96"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -21,24 +22,33 @@ const db = getFirestore(app);
 // PENJAGA HALAMAN ADMIN
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        document.getElementById('loading-message').style.display = 'none';
-        document.getElementById('admin-content').style.display = 'block';
-        // Pastikan DOM sudah siap sebelum menjalankan initCMS
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initCMS);
+            document.addEventListener('DOMContentLoaded', runAdmin);
         } else {
-            initCMS();
+            runAdmin();
         }
     } else {
         window.location.replace('login.html');
     }
 });
 
-// Fungsi utama yang menjalankan semua logika CMS
+function runAdmin() {
+    document.getElementById('loading-message').style.display = 'none';
+    document.getElementById('admin-content').style.display = 'block';
+    initCMS();
+}
+
 function initCMS() {
-    let allData = []; 
+    let currentDataOnPage = []; // Data yang sedang ditampilkan di tabel
+    let firstVisibleDoc = null; // Penanda dokumen pertama di halaman
+    let lastVisibleDoc = null; // Penanda dokumen terakhir di halaman
+    let pageHistory = [null]; // Menyimpan penanda halaman pertama untuk tombol "Sebelumnya"
+    const itemsPerPage = 25; // Jumlah data per halaman
+
     const tableBody = document.getElementById('table-body');
     const searchInput = document.getElementById('search-input');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
     const klentengForm = document.getElementById('klenteng-form');
     const formTitle = document.getElementById('form-title');
     const docIdInput = document.getElementById('doc-id');
@@ -47,13 +57,44 @@ function initCMS() {
     const currentImageUrlP = document.getElementById('current-image-url');
     const submitButton = klentengForm.querySelector('button[type="submit"]');
 
-    // --- FUNGSI UNTUK MEMUAT SEMUA DATA KE TABEL ---
-    async function loadAllData() {
-        const q = query(collection(db, "klenteng"), orderBy("nama"));
+    // --- LOGIKA PAGINASI ---
+    async function loadData(direction = 'initial') {
+        let q;
+        const klentengCollection = collection(db, "klenteng");
+
+        if (direction === 'next') {
+            q = query(klentengCollection, orderBy("nama"), startAfter(lastVisibleDoc), limit(itemsPerPage));
+        } else if (direction === 'prev') {
+            // Kembali ke penanda halaman sebelumnya
+            pageHistory.pop();
+            const previousPageStart = pageHistory[pageHistory.length - 1];
+            q = query(klentengCollection, orderBy("nama"), startAfter(previousPageStart), limit(itemsPerPage));
+        } else { // Pemuatan pertama kali
+            q = query(klentengCollection, orderBy("nama"), limit(itemsPerPage));
+        }
+
         const querySnapshot = await getDocs(q);
-        allData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderTable(allData);
+        currentDataOnPage = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (!querySnapshot.empty) {
+            firstVisibleDoc = querySnapshot.docs[0];
+            lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+            if (direction === 'next') {
+                pageHistory.push(firstVisibleDoc);
+            }
+        }
+        
+        renderTable(currentDataOnPage);
+        updatePaginationButtons(querySnapshot);
     }
+
+    function updatePaginationButtons(snapshot) {
+        nextBtn.disabled = snapshot.size < itemsPerPage;
+        prevBtn.disabled = pageHistory.length <= 1;
+    }
+    
+    nextBtn.addEventListener('click', () => loadData('next'));
+    prevBtn.addEventListener('click', () => loadData('prev'));
 
     // --- FUNGSI UNTUK MENAMPILKAN DATA DI TABEL ---
     function renderTable(data) {
@@ -71,23 +112,18 @@ function initCMS() {
         });
     }
 
-    // --- EVENT LISTENER UNTUK PENCARIAN ---
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const filteredData = allData.filter(item => item.nama.toLowerCase().includes(searchTerm));
-        renderTable(filteredData);
-    });
-
-    // --- EVENT LISTENER UNTUK TOMBOL EDIT DI TABEL ---
+    // --- EVENT LISTENER UNTUK TOMBOL EDIT ---
     tableBody.addEventListener('click', (e) => {
         if (e.target.classList.contains('edit-btn')) {
             const docId = e.target.dataset.id;
-            const dataToEdit = allData.find(item => item.id === docId);
-            fillFormForEdit(dataToEdit);
+            const dataToEdit = currentDataOnPage.find(item => item.id === docId);
+            if (dataToEdit) {
+                fillFormForEdit(dataToEdit);
+            }
         }
     });
-
-    // --- FUNGSI UNTUK MENGISI FORMULIR SAAT EDIT ---
+    
+    // ... (Sisa fungsi CMS seperti fillFormForEdit, clearForm, submit, upload, dan tinymce tetap sama) ...
     function fillFormForEdit(data) {
         formTitle.textContent = `Edit: ${data.nama}`;
         docIdInput.value = data.id;
@@ -101,10 +137,9 @@ function initCMS() {
         tinymce.get('deskripsi').setContent(data.deskripsi || '');
         currentImageUrlP.textContent = `Gambar saat ini: ${data.imageUrl ? data.imageUrl.substring(0, 50) + '...' : 'Tidak ada'}`;
         submitButton.textContent = 'Update Data';
-        window.scrollTo(0, document.body.scrollHeight);
+        klentengForm.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // --- FUNGSI UNTUK MEMBERSIHKAN FORMULIR ---
     function clearForm() {
         formTitle.textContent = 'Tambah Data Baru';
         klentengForm.reset();
@@ -115,14 +150,13 @@ function initCMS() {
     }
     clearFormBtn.addEventListener('click', clearForm);
 
-    // --- LOGIKA FORM SUBMIT (BISA UNTUK TAMBAH & UPDATE) ---
     klentengForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitButton.disabled = true;
         submitButton.textContent = 'Menyimpan...';
 
         const docId = docIdInput.value;
-        let imageUrl = docId ? (allData.find(item => item.id === docId)?.imageUrl || '') : '';
+        let imageUrl = docId ? (currentDataOnPage.find(item => item.id === docId)?.imageUrl || '') : '';
 
         const file = imageInput.files[0];
         if (file) {
@@ -156,7 +190,7 @@ function initCMS() {
                 await addDoc(collection(db, "klenteng"), dataToSave);
                 alert('Data baru berhasil disimpan!');
             }
-            loadAllData();
+            await loadData('initial'); // Muat ulang halaman pertama
             clearForm();
         } catch (error) {
             console.error("Error saving document: ", error);
@@ -166,8 +200,7 @@ function initCMS() {
             submitButton.textContent = docId ? 'Update Data' : 'Simpan Data';
         }
     });
-    
-    // --- FUNGSI UPLOAD & INISIALISASI TINYMCE ---
+
     const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/duw0uljnq/image/upload';
     const CLOUDINARY_UPLOAD_PRESET = 'info-klenteng';
 
@@ -196,10 +229,10 @@ function initCMS() {
                 if (result.secure_url) {
                     resolve(result.secure_url);
                 } else {
-                    reject('Upload gagal');
+                    reject('Upload gagal: ' + JSON.stringify(result));
                 }
             })
-            .catch(() => reject('Upload gagal'));
+            .catch((error) => reject('Upload gagal: ' + error));
     });
     
     tinymce.init({
@@ -211,5 +244,5 @@ function initCMS() {
     });
 
     // --- PANGGIL FUNGSI AWAL ---
-    loadAllData();
+    loadData('initial');
 }
