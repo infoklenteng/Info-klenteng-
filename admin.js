@@ -1,9 +1,9 @@
-// admin.js (Versi Lengkap dengan Paginasi, Pencarian, dan Hapus)
+// admin.js (Versi Lengkap dengan Aksi Massal)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-// --- IMPOR FUNGSI BARU: deleteDoc dan where ---
-import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, orderBy, query, limit, startAfter, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// --- IMPOR FUNGSI BARU: writeBatch ---
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, orderBy, query, limit, startAfter, getDocs, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Ganti dengan firebaseConfig Anda
 const firebaseConfig = {
@@ -58,6 +58,11 @@ function initCMS() {
     const currentImageUrlP = document.getElementById('current-image-url');
     const submitButton = klentengForm.querySelector('button[type="submit"]');
 
+    // === ELEMEN BARU UNTUK AKSI MASSAL ===
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const bulkPublishBtn = document.getElementById('bulk-publish-btn');
+
     // --- LOGIKA PAGINASI ---
     async function loadData(direction = 'initial') {
         let q;
@@ -69,8 +74,8 @@ function initCMS() {
             pageHistory.pop();
             const previousPageStart = pageHistory[pageHistory.length - 1];
             q = query(klentengCollection, orderBy("nama"), startAfter(previousPageStart), limit(itemsPerPage));
-        } else { // Pemuatan awal atau reset
-            pageHistory = [null]; // Reset riwayat halaman
+        } else {
+            pageHistory = [null];
             q = query(klentengCollection, orderBy("nama"), limit(itemsPerPage));
         }
 
@@ -80,9 +85,7 @@ function initCMS() {
         if (!querySnapshot.empty) {
             firstVisibleDoc = querySnapshot.docs[0];
             lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-            if (direction === 'next') {
-                pageHistory.push(firstVisibleDoc);
-            }
+            if (direction === 'next') pageHistory.push(firstVisibleDoc);
         }
         
         renderTable(currentDataOnPage);
@@ -101,13 +104,17 @@ function initCMS() {
     // --- FUNGSI UNTUK MENAMPILKAN DATA DI TABEL ---
     function renderTable(data) {
         tableBody.innerHTML = '';
+        selectAllCheckbox.checked = false; // Reset checkbox utama
+        updateBulkActionButtonsState(); // Nonaktifkan tombol aksi
+
         if (data.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Data tidak ditemukan.</td></tr>';
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Data tidak ditemukan.</td></tr>`;
             return;
         }
         data.forEach(item => {
             const row = `
                 <tr>
+                    <td><input type="checkbox" class="row-checkbox" data-id="${item.id}"></td>
                     <td>${item.nama}</td>
                     <td>${item.kota || 'N/A'}</td>
                     <td>${item.status === 'tayang' ? 'Tayang' : 'Draft'}</td>
@@ -121,25 +128,102 @@ function initCMS() {
         });
     }
 
+    // --- LOGIKA AKSI MASSAL ---
+
+    // Fungsi untuk mengupdate status tombol aksi massal
+    function updateBulkActionButtonsState() {
+        const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+        const allCheckboxes = document.querySelectorAll('.row-checkbox');
+        const hasSelection = selectedCheckboxes.length > 0;
+        
+        bulkDeleteBtn.disabled = !hasSelection;
+        bulkPublishBtn.disabled = !hasSelection;
+        
+        // Update checkbox "pilih semua"
+        if (allCheckboxes.length > 0 && selectedCheckboxes.length === allCheckboxes.length) {
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.checked = false;
+        }
+    }
+
+    // Event listener untuk checkbox "pilih semua"
+    selectAllCheckbox.addEventListener('change', () => {
+        document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        updateBulkActionButtonsState();
+    });
+
+    // Event listener untuk perubahan pada checkbox di dalam tabel
+    tableBody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('row-checkbox')) {
+            updateBulkActionButtonsState();
+        }
+    });
+
+    // Fungsi untuk mendapatkan ID yang dipilih
+    function getSelectedIds() {
+        return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.id);
+    }
+    
+    // Event listener untuk tombol Hapus Massal
+    bulkDeleteBtn.addEventListener('click', async () => {
+        const idsToDelete = getSelectedIds();
+        if (idsToDelete.length === 0) return;
+
+        if (confirm(`Anda yakin ingin menghapus ${idsToDelete.length} item terpilih?`)) {
+            const batch = writeBatch(db);
+            idsToDelete.forEach(id => {
+                const docRef = doc(db, "klenteng", id);
+                batch.delete(docRef);
+            });
+            try {
+                await batch.commit();
+                alert(`${idsToDelete.length} item berhasil dihapus.`);
+                loadData('initial');
+            } catch (error) {
+                console.error("Error deleting documents in batch: ", error);
+                alert("Gagal menghapus item terpilih.");
+            }
+        }
+    });
+
+    // Event listener untuk tombol Tayangkan Massal
+    bulkPublishBtn.addEventListener('click', async () => {
+        const idsToPublish = getSelectedIds();
+        if (idsToPublish.length === 0) return;
+        
+        if (confirm(`Anda yakin ingin menayangkan ${idsToPublish.length} item terpilih?`)) {
+            const batch = writeBatch(db);
+            idsToPublish.forEach(id => {
+                const docRef = doc(db, "klenteng", id);
+                batch.update(docRef, { status: 'tayang' });
+            });
+            try {
+                await batch.commit();
+                alert(`${idsToPublish.length} item berhasil ditayangkan.`);
+                loadData('initial');
+            } catch (error) {
+                console.error("Error updating documents in batch: ", error);
+                alert("Gagal menayangkan item terpilih.");
+            }
+        }
+    });
+
+
     // --- FUNGSI PENCARIAN ---
     async function performSearch(searchTerm) {
         if (!searchTerm) {
-            loadData('initial'); // Kembali ke daftar normal jika pencarian kosong
+            loadData('initial');
             return;
         }
-
         const klentengCollection = collection(db, "klenteng");
-        // Query untuk mencari nama yang dimulai dengan searchTerm
-        const q = query(klentengCollection, 
-                        where("nama", ">=", searchTerm), 
-                        where("nama", "<=", searchTerm + '\uf8ff'),
-                        orderBy("nama"));
-                        
+        const q = query(klentengCollection, where("nama", ">=", searchTerm), where("nama", "<=", searchTerm + '\uf8ff'), orderBy("nama"));
         const querySnapshot = await getDocs(q);
         const searchResults = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        currentDataOnPage = searchResults; // Update data di halaman dengan hasil pencarian
+        currentDataOnPage = searchResults;
         renderTable(searchResults);
-        // Nonaktifkan paginasi selama pencarian
         prevBtn.disabled = true;
         nextBtn.disabled = true;
     }
@@ -149,30 +233,23 @@ function initCMS() {
     });
 
 
-    // --- EVENT LISTENER UNTUK TOMBOL EDIT DAN HAPUS ---
+    // --- EVENT LISTENER UNTUK TOMBOL EDIT DAN HAPUS SATUAN ---
     tableBody.addEventListener('click', async (e) => {
         const target = e.target;
-        
-        // Logika untuk tombol Edit
         if (target.classList.contains('edit-btn')) {
             const docId = target.dataset.id;
             const dataToEdit = currentDataOnPage.find(item => item.id === docId);
-            if (dataToEdit) {
-                fillFormForEdit(dataToEdit);
-            }
+            if (dataToEdit) fillFormForEdit(dataToEdit);
         }
-        
-        // --- LOGIKA BARU UNTUK TOMBOL HAPUS ---
         if (target.classList.contains('delete-btn')) {
             const docId = target.dataset.id;
             const dataToDelete = currentDataOnPage.find(item => item.id === docId);
-            
             if (confirm(`Yakin ingin menghapus data "${dataToDelete.nama}" secara permanen?`)) {
                 try {
                     await deleteDoc(doc(db, "klenteng", docId));
                     alert('Data berhasil dihapus!');
-                    loadData('initial'); // Muat ulang data dari halaman pertama
-                    clearForm(); // Bersihkan form jika data yang dihapus sedang diedit
+                    loadData('initial');
+                    clearForm();
                 } catch (error) {
                     console.error("Error deleting document: ", error);
                     alert("Gagal menghapus data.");
@@ -248,8 +325,8 @@ function initCMS() {
                 await addDoc(collection(db, "klenteng"), dataToSave);
                 alert('Data baru berhasil disimpan!');
             }
-            searchInput.value = ''; // Kosongkan pencarian setelah submit
-            await loadData('initial'); // Muat ulang halaman pertama
+            searchInput.value = '';
+            await loadData('initial');
             clearForm();
         } catch (error) {
             console.error("Error saving document: ", error);
