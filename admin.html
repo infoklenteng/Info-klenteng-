@@ -5,59 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Info Klenteng</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Script TinyMCE dengan API Key Anda -->
     <script src="https://cdn.tiny.cloud/1/ng3z0e1k5c96r38q3546bwty336qerrtyrdugwvlysqyhpkb/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
-        /* Style tambahan khusus untuk halaman admin */
         body { background-color: #f4f4f4; }
-        .admin-container { padding: 2rem; max-width: 900px; margin: 2rem auto; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .admin-container { padding: 2rem; max-width: 1200px; margin: 2rem auto; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #333; }
-        .form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-        .submit-btn { width: 100%; background-color: var(--primary-color, #c0392b); color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
-        .submit-btn:hover { background-color: #e74c3c; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .submit-btn { width: 100%; background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1rem; }
         .submit-btn:disabled { background-color: #ccc; }
+        .edit-section { border-top: 2px solid #eee; margin-top: 2rem; padding-top: 2rem; }
+        #data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        #data-table th, #data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #data-table th { background-color: #f2f2f2; }
+        .edit-btn { background-color: #ffc107; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
+        #clear-form-btn { width: 100%; background-color: #6c757d; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; margin-top: 10px; }
     </style>
 </head>
 <body>
     <h2 id="loading-message" style="text-align: center; margin-top: 100px;">Memverifikasi sesi...</h2>
 
     <div class="admin-container" id="admin-content" style="display: none;">
-        <h1>CMS Info Klenteng</h1>
-        <form id="klenteng-form">
+        <h1>Manajemen Konten Klenteng</h1>
+        
+        <div class="list-section">
+            <h2>Daftar Klenteng</h2>
             <div class="form-group">
-                <label for="nama">Nama Klenteng</label>
-                <input type="text" id="nama" required>
+                <label for="search-input">Cari Klenteng (berdasarkan nama)</label>
+                <input type="text" id="search-input" placeholder="Ketik untuk mencari...">
             </div>
-            <div class="form-group">
-                <label for="alamat">Alamat</label>
-                <input type="text" id="alamat" required>
-            </div>
-            <div class="form-group">
-                <label for="kota">Kota</label>
-                <input type="text" id="kota" required>
-            </div>
-            <div class="form-group">
-                <label for="provinsi">Provinsi</label>
-                <input type="text" id="provinsi" required>
-            </div>
-            <div class="form-group">
-                <label for="lat">Latitude (Contoh: -6.2445)</label>
-                <input type="text" id="lat" required>
-            </div>
-            <div class="form-group">
-                <label for="lon">Longitude (Contoh: 106.9925)</label>
-                <input type="text" id="lon" required>
-            </div>
-            <div class="form-group">
-                <label for="main-image">Gambar Utama (Thumbnail)</label>
-                <input type="file" id="main-image" accept="image/*">
-            </div>
-            <div class="form-group">
-                <label for="deskripsi">Deskripsi Lengkap</label>
-                <textarea id="deskripsi"></textarea>
-            </div>
-            <button type="submit" class="submit-btn">Simpan Data</button>
-        </form>
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Kota</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Data akan dimuat di sini oleh JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="edit-section">
+            <h2 id="form-title">Tambah Data Baru</h2>
+            <form id="klenteng-form">
+                <input type="hidden" id="doc-id">
+                <div class="form-group">
+                    <label for="nama">Nama Klenteng</label>
+                    <input type="text" id="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="alamat">Alamat</label>
+                    <input type="text" id="alamat">
+                </div>
+                <div class="form-group">
+                    <label for="kota">Kota</label>
+                    <input type="text" id="kota">
+                </div>
+                <div class="form-group">
+                    <label for="provinsi">Provinsi</label>
+                    <input type="text" id="provinsi">
+                </div>
+                <div class="form-group">
+                    <label for="lat">Latitude (Contoh: -6.2445)</label>
+                    <input type="text" id="lat" required>
+                </div>
+                <div class="form-group">
+                    <label for="lon">Longitude (Contoh: 106.9925)</label>
+                    <input type="text" id="lon" required>
+                </div>
+                <div class="form-group">
+                    <label for="main-image">Ganti Gambar Utama (Thumbnail)</label>
+                    <input type="file" id="main-image" accept="image/*">
+                    <p id="current-image-url" style="font-size: 0.8rem; color: #666;"></p>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status Penayangan</label>
+                    <select id="status">
+                        <option value="draft">Simpan sebagai Draft</option>
+                        <option value="tayang">Tayangkan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="deskripsi">Deskripsi Lengkap</label>
+                    <textarea id="deskripsi"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Simpan Data</button>
+                <button type="button" id="clear-form-btn">Batal Edit (Mode Tambah Baru)</button>
+            </form>
+        </div>
     </div>
     
     <script src="admin.js" type="module"></script>
