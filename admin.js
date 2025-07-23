@@ -1,137 +1,100 @@
-// admin.js (Versi Lengkap dan Bersih)
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Info Klenteng</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tiny.cloud/1/ng3z0e1k5c96r38q3546bwty336qerrtyrdugwvlysqyhpkb/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <style>
+        body { background-color: #f4f4f4; }
+        .admin-container { padding: 2rem; max-width: 1200px; margin: 2rem auto; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; }
+        .submit-btn { width: 100%; background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1rem; }
+        .edit-section { border-top: 2px solid #eee; margin-top: 2rem; padding-top: 2rem; }
+        #data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        #data-table th, #data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #data-table th { background-color: #f2f2f2; }
+        .edit-btn { background-color: #ffc107; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h2 id="loading-message" style="text-align: center; margin-top: 100px;">Memuat data CMS...</h2>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    <div class="admin-container" id="admin-content" style="display: none;">
+        <h1>Manajemen Konten Klenteng</h1>
+        
+        <div class="list-section">
+            <h2>Daftar Klenteng</h2>
+            <div class="form-group">
+                <label for="search-input">Cari Klenteng (berdasarkan nama)</label>
+                <input type="text" id="search-input" placeholder="Ketik untuk mencari...">
+            </div>
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Kota</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    </tbody>
+            </table>
+        </div>
 
-// Ganti dengan firebaseConfig dari PROYEK BARU Anda
-const firebaseConfig = {
-  apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
-  authDomain: "info-klenteng-df46f.firebaseapp.com",
-  projectId: "info-klenteng-df46f",
-  storageBucket: "info-klenteng-df46f.firebasestorage.app",
-  messagingSenderId: "416766280539",
-  appId: "1:416766280539:web:c40c1f7903d87b0558507e",
-  measurementId: "G-M21P3MZN96"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const adminContent = document.getElementById('admin-content');
-const loadingMessage = document.getElementById('loading-message');
-
-// PENJAGA HALAMAN ADMIN: Cek status login pengguna
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loadingMessage.style.display = 'none';
-        adminContent.style.display = 'block';
-        initCMS(); 
-    } else {
-        window.location.replace('login.html');
-    }
-});
-
-// Fungsi utama yang menjalankan semua logika CMS setelah login berhasil
-function initCMS() {
-    // --- KONFIGURASI CLOUDINARY ---
-    const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/duw0uljnq/image/upload';
-    const CLOUDINARY_UPLOAD_PRESET = 'info-klenteng';
-
-    // --- FUNGSI UNTUK UPLOAD GAMBAR DARI TINYMCE ---
-    const tinymce_image_upload_handler = (blobInfo) => new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.withCredentials = false;
-        xhr.open('POST', CLOUDINARY_URL);
-        xhr.onload = () => {
-            if (xhr.status < 200 || xhr.status >= 300) {
-                return reject('HTTP Error: ' + xhr.status);
-            }
-            const json = JSON.parse(xhr.responseText);
-            if (!json || typeof json.secure_url != 'string') {
-                return reject('Invalid JSON: ' + xhr.responseText);
-            }
-            resolve(json.secure_url);
-        };
-        xhr.onerror = () => { reject('Image upload failed'); };
-        const formData = new FormData();
-        formData.append('file', blobInfo.blob(), blobInfo.filename());
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        xhr.send(formData);
-    });
-
-    // --- INISIALISASI TINYMCE ---
-    tinymce.init({
-        selector: '#deskripsi',
-        plugins: 'image lists link autolink media table',
-        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | link image media table',
-        height: 500,
-        images_upload_handler: tinymce_image_upload_handler
-    });
-
-    // --- FUNGSI UNTUK UPLOAD GAMBAR UTAMA ---
-    async function uploadMainImage(file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-        try {
-            const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
-            if (!response.ok) throw new Error('Upload gagal');
-            const data = await response.json();
-            return data.secure_url;
-        } catch (error) {
-            console.error('Gagal upload gambar utama:', error);
-            return null;
-        }
-    }
-
-    // --- LOGIKA FORM SUBMIT ---
-    const klentengForm = document.getElementById('klenteng-form');
-    const imageInput = document.getElementById('main-image');
-
-    klentengForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitButton = e.target.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = 'Menyimpan...';
-
-        const file = imageInput.files[0];
-        let imageUrl = '';
-
-        if (file) {
-            imageUrl = await uploadMainImage(file);
-            if (!imageUrl) {
-                alert('Upload gambar utama gagal. Proses dibatalkan.');
-                submitButton.disabled = false;
-                submitButton.textContent = 'Simpan Data';
-                return;
-            }
-        }
-
-        const dataToSave = {
-            nama: document.getElementById('nama').value,
-            alamat: document.getElementById('alamat').value,
-            kota: document.getElementById('kota').value,
-            provinsi: document.getElementById('provinsi').value,
-            lat: parseFloat(document.getElementById('lat').value),
-            lon: parseFloat(document.getElementById('lon').value),
-            deskripsi: tinymce.get('deskripsi').getContent(),
-            imageUrl: imageUrl
-        };
-
-        try {
-            await addDoc(collection(db, "klenteng"), dataToSave);
-            alert('Data klenteng berhasil disimpan!');
-            klentengForm.reset();
-            tinymce.get('deskripsi').setContent('');
-        } catch (error) {
-            console.error("Error saat menyimpan ke Firestore: ", error);
-            alert("Gagal menyimpan data. Cek konsol untuk detail.");
-        } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Simpan Data';
-        }
-    });
-}
+        <div class="edit-section">
+            <h2 id="form-title">Tambah Data Baru</h2>
+            <form id="klenteng-form">
+                <input type="hidden" id="doc-id"> <div class="form-group">
+                    <label for="nama">Nama Klenteng</label>
+                    <input type="text" id="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="alamat">Alamat</label>
+                    <input type="text" id="alamat">
+                </div>
+                <div class="form-group">
+                    <label for="kota">Kota</label>
+                    <input type="text" id="kota">
+                </div>
+                <div class="form-group">
+                    <label for="provinsi">Provinsi</label>
+                    <input type="text" id="provinsi">
+                </div>
+                <div class="form-group">
+                    <label for="lat">Latitude</label>
+                    <input type="text" id="lat" required>
+                </div>
+                <div class="form-group">
+                    <label for="lon">Longitude</label>
+                    <input type="text" id="lon" required>
+                </div>
+                <div class="form-group">
+                    <label for="main-image">Ganti Gambar Utama</label>
+                    <input type="file" id="main-image" accept="image/*">
+                    <p id="current-image-url"></p>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status Penayangan</label>
+                    <select id="status">
+                        <option value="tayang">Tayangkan</option>
+                        <option value="draft">Simpan sebagai Draft</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="deskripsi">Deskripsi Lengkap</label>
+                    <textarea id="deskripsi"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Simpan Data</button>
+                <button type="button" id="clear-form-btn" style="margin-top: 10px;">Batal Edit (Tambah Baru)</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="admin.js" type="module"></script>
+</body>
+</html>
