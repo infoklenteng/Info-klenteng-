@@ -6,12 +6,13 @@ import { getFirestore, collection, getDocs, doc, getDoc, enableNetwork, query, l
 
 // Ganti dengan firebaseConfig dari PROYEK BARU Anda
 const firebaseConfig = {
-    apiKey: "GANTI_DENGAN_API_KEY_ANDA",
-    authDomain: "GANTI_DENGAN_AUTH_DOMAIN_ANDA",
-    projectId: "GANTI_DENGAN_PROJECT_ID_ANDA",
-    storageBucket: "GANTI_DENGAN_STORAGE_BUCKET_ANDA",
-    messagingSenderId: "GANTI_DENGAN_MESSAGING_SENDER_ID_ANDA",
-    appId: "GANTI_DENGAN_APP_ID_ANDA"
+  apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
+  authDomain: "info-klenteng-df46f.firebaseapp.com",
+  projectId: "info-klenteng-df46f",
+  storageBucket: "info-klenteng-df46f.firebasestorage.app",
+  messagingSenderId: "416766280539",
+  appId: "1:416766280539:web:c40c1f7903d87b0558507e",
+  measurementId: "G-M21P3MZN96"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -35,6 +36,7 @@ if (cardContainer && searchBar && mapContainer) {
 
     searchBar.addEventListener('input', (e) => {
         const kataKunci = e.target.value.toLowerCase();
+        // Pencarian akan memfilter dari data yang sudah dimuat (50 data)
         const hasilFilter = semuaKlenteng.filter(klenteng => 
             klenteng.nama.toLowerCase().includes(kataKunci) || 
             (klenteng.kota && klenteng.kota.toLowerCase().includes(kataKunci))
@@ -137,6 +139,7 @@ async function loadKlentengDetail(id) {
             
             const detailContent = document.querySelector('.detail-content');
             if (detailContent) {
+                // Tampilkan deskripsi sebagai HTML, bukan teks biasa
                 detailContent.innerHTML = `<h2>Detail</h2>${data.deskripsi || '<p>Tidak ada deskripsi.</p>'}`;
             }
 
