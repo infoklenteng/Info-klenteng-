@@ -5,8 +5,15 @@ import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/fir
 
 // Ganti dengan firebaseConfig Anda
 const firebaseConfig = {
-    // ... firebaseConfig Anda
+  apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
+  authDomain: "info-klenteng-df46f.firebaseapp.com",
+  projectId: "info-klenteng-df46f",
+  storageBucket: "info-klenteng-df46f.firebasestorage.app",
+  messagingSenderId: "416766280539",
+  appId: "1:416766280539:web:c40c1f7903d87b0558507e",
+  measurementId: "G-M21P3MZN96"
 };
+
 
 // Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
