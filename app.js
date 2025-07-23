@@ -1,8 +1,33 @@
-// Import fungsi yang diperlukan dari Firebase SDK
+// =======================================================
+// BARU: Fungsi untuk menampilkan log di layar mobile
+// =======================================================
+function mobileLog(message, isError = false) {
+    const consoleDiv = document.getElementById('mobile-console');
+    if (consoleDiv) {
+        const p = document.createElement('p');
+        p.textContent = `> ${message}`;
+        if (isError) {
+            p.className = 'error';
+        }
+        consoleDiv.appendChild(p);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll ke bawah
+    }
+    // Tetap tampilkan di console browser asli
+    if (isError) {
+        console.error(message);
+    } else {
+        console.log(message);
+    }
+}
+
+// =======================================================
+// Kode Aplikasi Anda (sudah dimodifikasi)
+// =======================================================
+
+mobileLog("app.js: Skrip dimulai.");
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-console.log("app.js: Skrip dimulai."); // LOG 1
 
 const firebaseConfig = {
   apiKey: "AIzaSyDnE-CN7YpFXGUh7qsGjsg8X8HL_dNgRDQ",
@@ -14,12 +39,10 @@ const firebaseConfig = {
   measurementId: "G-XMNTWC5HQD"
 };
 
-// Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-console.log("app.js: Firebase diinisialisasi."); // LOG 2
+mobileLog("app.js: Firebase diinisialisasi.");
 
-// === LOGIKA UNTUK HALAMAN UTAMA (index.html) ===
 let semuaKlenteng = [];
 let map; 
 let markers = []; 
@@ -29,7 +52,7 @@ const searchBar = document.getElementById('search-bar');
 const mapContainer = document.getElementById('map');
 
 if (cardContainer && searchBar && mapContainer) {
-    console.log("app.js: Berada di Halaman Utama. Memulai peta dan memuat data."); // LOG 3
+    mobileLog("app.js: Halaman utama terdeteksi. Memulai...");
     initMap();
     loadKlentengList();
 
@@ -48,25 +71,24 @@ function initMap() {
         maxZoom: 19,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
-    console.log("app.js: Peta berhasil diinisialisasi."); // LOG 4
+    mobileLog("app.js: Peta berhasil diinisialisasi.");
 }
 
 async function loadKlentengList() {
     try {
-        console.log("app.js: Mencoba mengambil data dari Firestore..."); // LOG 5
+        mobileLog("app.js: Mencoba mengambil data dari Firestore...");
         const querySnapshot = await getDocs(collection(db, "klenteng"));
         semuaKlenteng = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log(`app.js: Berhasil mengambil ${semuaKlenteng.length} data.`); // LOG 6
-        console.log("Data pertama:", semuaKlenteng[0]); // LOG 7: Melihat data pertama
+        mobileLog(`app.js: Berhasil! Ditemukan ${semuaKlenteng.length} data.`);
         displayKlenteng(semuaKlenteng);
     } catch (error) {
-        console.error("app.js: Gagal mengambil data dari Firestore!", error); // LOG ERROR
-        cardContainer.innerHTML = "<p>Gagal memuat data. Cek konsol untuk error.</p>";
+        mobileLog(`app.js: GAGAL! ${error.message}`, true); // Menampilkan pesan error
+        cardContainer.innerHTML = "<p>Gagal memuat data. Cek konsol di bawah.</p>";
     }
 }
 
 function displayKlenteng(daftarKlenteng) {
-    console.log(`app.js: Menampilkan ${daftarKlenteng.length} klenteng.`); // LOG 8
+    mobileLog(`app.js: Menampilkan ${daftarKlenteng.length} klenteng.`);
     cardContainer.innerHTML = '';
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
