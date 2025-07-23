@@ -1,8 +1,9 @@
-// admin.js (Versi Lengkap dengan Paginasi)
+// admin.js (Versi Lengkap dengan Paginasi, Pencarian, dan Hapus)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, updateDoc, orderBy, query, limit, startAfter, endBefore, limitToLast, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// --- IMPOR FUNGSI BARU: deleteDoc dan where ---
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, orderBy, query, limit, startAfter, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Ganti dengan firebaseConfig Anda
 const firebaseConfig = {
@@ -39,11 +40,11 @@ function runAdmin() {
 }
 
 function initCMS() {
-    let currentDataOnPage = []; // Data yang sedang ditampilkan di tabel
-    let firstVisibleDoc = null; // Penanda dokumen pertama di halaman
-    let lastVisibleDoc = null; // Penanda dokumen terakhir di halaman
-    let pageHistory = [null]; // Menyimpan penanda halaman pertama untuk tombol "Sebelumnya"
-    const itemsPerPage = 25; // Jumlah data per halaman
+    let currentDataOnPage = [];
+    let firstVisibleDoc = null;
+    let lastVisibleDoc = null;
+    let pageHistory = [null];
+    const itemsPerPage = 25;
 
     const tableBody = document.getElementById('table-body');
     const searchInput = document.getElementById('search-input');
@@ -65,11 +66,11 @@ function initCMS() {
         if (direction === 'next') {
             q = query(klentengCollection, orderBy("nama"), startAfter(lastVisibleDoc), limit(itemsPerPage));
         } else if (direction === 'prev') {
-            // Kembali ke penanda halaman sebelumnya
             pageHistory.pop();
             const previousPageStart = pageHistory[pageHistory.length - 1];
             q = query(klentengCollection, orderBy("nama"), startAfter(previousPageStart), limit(itemsPerPage));
-        } else { // Pemuatan pertama kali
+        } else { // Pemuatan awal atau reset
+            pageHistory = [null]; // Reset riwayat halaman
             q = query(klentengCollection, orderBy("nama"), limit(itemsPerPage));
         }
 
@@ -89,8 +90,9 @@ function initCMS() {
     }
 
     function updatePaginationButtons(snapshot) {
-        nextBtn.disabled = snapshot.size < itemsPerPage;
-        prevBtn.disabled = pageHistory.length <= 1;
+        const isSearching = searchInput.value.trim() !== '';
+        nextBtn.disabled = snapshot.size < itemsPerPage || isSearching;
+        prevBtn.disabled = pageHistory.length <= 1 || isSearching;
     }
     
     nextBtn.addEventListener('click', () => loadData('next'));
@@ -99,26 +101,82 @@ function initCMS() {
     // --- FUNGSI UNTUK MENAMPILKAN DATA DI TABEL ---
     function renderTable(data) {
         tableBody.innerHTML = '';
+        if (data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Data tidak ditemukan.</td></tr>';
+            return;
+        }
         data.forEach(item => {
             const row = `
                 <tr>
                     <td>${item.nama}</td>
                     <td>${item.kota || 'N/A'}</td>
                     <td>${item.status === 'tayang' ? 'Tayang' : 'Draft'}</td>
-                    <td><button class="edit-btn" data-id="${item.id}">Edit</button></td>
+                    <td>
+                        <button class="edit-btn" data-id="${item.id}">Edit</button>
+                        <button class="delete-btn" data-id="${item.id}">Hapus</button>
+                    </td>
                 </tr>
             `;
             tableBody.innerHTML += row;
         });
     }
 
-    // --- EVENT LISTENER UNTUK TOMBOL EDIT ---
-    tableBody.addEventListener('click', (e) => {
-        if (e.target.classList.contains('edit-btn')) {
-            const docId = e.target.dataset.id;
+    // --- FUNGSI PENCARIAN ---
+    async function performSearch(searchTerm) {
+        if (!searchTerm) {
+            loadData('initial'); // Kembali ke daftar normal jika pencarian kosong
+            return;
+        }
+
+        const klentengCollection = collection(db, "klenteng");
+        // Query untuk mencari nama yang dimulai dengan searchTerm
+        const q = query(klentengCollection, 
+                        where("nama", ">=", searchTerm), 
+                        where("nama", "<=", searchTerm + '\uf8ff'),
+                        orderBy("nama"));
+                        
+        const querySnapshot = await getDocs(q);
+        const searchResults = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        currentDataOnPage = searchResults; // Update data di halaman dengan hasil pencarian
+        renderTable(searchResults);
+        // Nonaktifkan paginasi selama pencarian
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+    }
+
+    searchInput.addEventListener('input', (e) => {
+        performSearch(e.target.value.trim());
+    });
+
+
+    // --- EVENT LISTENER UNTUK TOMBOL EDIT DAN HAPUS ---
+    tableBody.addEventListener('click', async (e) => {
+        const target = e.target;
+        
+        // Logika untuk tombol Edit
+        if (target.classList.contains('edit-btn')) {
+            const docId = target.dataset.id;
             const dataToEdit = currentDataOnPage.find(item => item.id === docId);
             if (dataToEdit) {
                 fillFormForEdit(dataToEdit);
+            }
+        }
+        
+        // --- LOGIKA BARU UNTUK TOMBOL HAPUS ---
+        if (target.classList.contains('delete-btn')) {
+            const docId = target.dataset.id;
+            const dataToDelete = currentDataOnPage.find(item => item.id === docId);
+            
+            if (confirm(`Yakin ingin menghapus data "${dataToDelete.nama}" secara permanen?`)) {
+                try {
+                    await deleteDoc(doc(db, "klenteng", docId));
+                    alert('Data berhasil dihapus!');
+                    loadData('initial'); // Muat ulang data dari halaman pertama
+                    clearForm(); // Bersihkan form jika data yang dihapus sedang diedit
+                } catch (error) {
+                    console.error("Error deleting document: ", error);
+                    alert("Gagal menghapus data.");
+                }
             }
         }
     });
@@ -190,6 +248,7 @@ function initCMS() {
                 await addDoc(collection(db, "klenteng"), dataToSave);
                 alert('Data baru berhasil disimpan!');
             }
+            searchInput.value = ''; // Kosongkan pencarian setelah submit
             await loadData('initial'); // Muat ulang halaman pertama
             clearForm();
         } catch (error) {
