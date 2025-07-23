@@ -25,12 +25,10 @@ const loadingMessage = document.getElementById('loading-message');
 // PENJAGA HALAMAN ADMIN: Cek status login pengguna
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Jika sudah login, tampilkan konten CMS
         loadingMessage.style.display = 'none';
         adminContent.style.display = 'block';
-        initCMS(); // Jalankan fungsi utama CMS
+        initCMS(); 
     } else {
-        // Jika tidak login, alihkan ke halaman login
         window.location.replace('login.html');
     }
 });
@@ -42,17 +40,17 @@ function initCMS() {
     const CLOUDINARY_UPLOAD_PRESET = 'info-klenteng';
 
     // --- FUNGSI UNTUK UPLOAD GAMBAR DARI TINYMCE ---
-    const tinymce_image_upload_handler = (blobInfo, progress) => new Promise((resolve, reject) => {
+    const tinymce_image_upload_handler = (blobInfo) => new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.withCredentials = false;
         xhr.open('POST', CLOUDINARY_URL);
         xhr.onload = () => {
             if (xhr.status < 200 || xhr.status >= 300) {
-                reject('HTTP Error: ' + xhr.status); return;
+                return reject('HTTP Error: ' + xhr.status);
             }
             const json = JSON.parse(xhr.responseText);
             if (!json || typeof json.secure_url != 'string') {
-                reject('Invalid JSON: ' + xhr.responseText); return;
+                return reject('Invalid JSON: ' + xhr.responseText);
             }
             resolve(json.secure_url);
         };
@@ -66,8 +64,8 @@ function initCMS() {
     // --- INISIALISASI TINYMCE ---
     tinymce.init({
         selector: '#deskripsi',
-        plugins: 'image lists link autolink',
-        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | link image',
+        plugins: 'image lists link autolink media table',
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | link image media table',
         height: 500,
         images_upload_handler: tinymce_image_upload_handler
     });
