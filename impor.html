@@ -2,90 +2,67 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Alat Impor Data OSM + Wikidata ke Firestore</title>
+    <title>Alat Impor Data ke Firestore</title>
     <style>
         body { font-family: sans-serif; padding: 2rem; background-color: #f4f4f4; }
-        .container { max-width: 800px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h1 { color: #333; }
         input[type="file"] { margin-bottom: 1rem; }
         button { background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; }
         button:disabled { background: #ccc; }
         #log { margin-top: 1rem; padding: 1rem; background: #333; color: #00ff00; font-family: monospace; height: 300px; overflow-y: auto; border-radius: 5px; }
         #log p { margin: 0; padding: 0 0 5px 0; border-bottom: 1px solid #444; }
-        .progress { margin-top: 1rem; }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1>Alat Impor OSM + Wikidata ke Firestore</h1>
-        <p>Pilih file <code>export.geojson</code> dari Overpass Turbo yang mengandung data klenteng/vihara.</p>
+        <h1>Alat Impor GeoJSON ke Firestore</h1>
+        <p>Pilih file `export.geojson` yang Anda unduh dari Overpass Turbo.</p>
         
         <input type="file" id="geojson-file" accept=".geojson">
         <button id="import-btn">Mulai Impor</button>
-        <div class="progress" id="progress"></div>
+
         <div id="log"></div>
     </div>
 
     <script type="module">
-        // Konfigurasi Firebase (ganti dengan milik Anda)
-        const firebaseConfig = {
-            apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
-            authDomain: "info-klenteng-df46f.firebaseapp.com",
-            projectId: "info-klenteng-df46f",
-            storageBucket: "info-klenteng-df46f.appspot.com",
-            messagingSenderId: "416766280539",
-            appId: "1:416766280539:web:c40c1f7903d87b0558507e"
-        };
+        // --- SCRIPT IMPOR ---
 
-        // Import Firebase SDK
+        // Ganti dengan firebaseConfig dari PROYEK BARU Anda
+       const firebaseConfig = {
+  apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
+  authDomain: "info-klenteng-df46f.firebaseapp.com",
+  projectId: "info-klenteng-df46f",
+  storageBucket: "info-klenteng-df46f.firebasestorage.app",
+  messagingSenderId: "416766280539",
+  appId: "1:416766280539:web:c40c1f7903d87b0558507e",
+  measurementId: "G-M21P3MZN96"
+};
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // Inisialisasi Firebase
+      import { getFirestore, collection, addDoc, writeBatch, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // Elemen DOM
+        
         const fileInput = document.getElementById('geojson-file');
         const importBtn = document.getElementById('import-btn');
         const logDiv = document.getElementById('log');
-        const progressDiv = document.getElementById('progress');
 
-        // Fungsi log
         function log(message) {
             logDiv.innerHTML += `<p>> ${message}</p>`;
             logDiv.scrollTop = logDiv.scrollHeight;
         }
 
-        // Fungsi untuk mengambil data dari Wikidata
-        async function getWikidata(wikidataId) {
-            try {
-                const response = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${wikidataId}.json`);
-                const data = await response.json();
-                const entity = data.entities[wikidataId];
-                
-                return {
-                    description: entity.descriptions?.id?.value || '',
-                    image: entity.claims?.P18?.[0]?.mainsnak?.datavalue?.value || '',
-                    website: entity.claims?.P856?.[0]?.mainsnak?.datavalue?.value || ''
-                };
-            } catch (error) {
-                log(`Gagal ambil Wikidata ${wikidataId}: ${error}`);
-                return {};
-            }
-        }
-
-        // Fungsi utama impor
         importBtn.addEventListener('click', async () => {
             const file = fileInput.files[0];
             if (!file) {
-                log('Error: Silakan pilih file GeoJSON terlebih dahulu.');
+                log('Error: Silakan pilih file terlebih dahulu.');
                 return;
             }
 
             importBtn.disabled = true;
             importBtn.textContent = 'Memproses...';
-            log('Memulai proses impor...');
 
             const reader = new FileReader();
             reader.onload = async (event) => {
@@ -94,70 +71,47 @@
                     const features = geojsonData.features;
                     log(`Ditemukan ${features.length} lokasi di dalam file.`);
                     
-                    const batchSize = 400; // Batas Firestore
-                    let processed = 0;
-
+                    // Firestore hanya mengizinkan 500 operasi tulis per batch
+                    const batchSize = 400; 
                     for (let i = 0; i < features.length; i += batchSize) {
                         const batch = writeBatch(db);
                         const chunk = features.slice(i, i + batchSize);
                         
-                        progressDiv.textContent = `Memproses ${i + 1}-${Math.min(i + batchSize, features.length)} dari ${features.length}...`;
+                        log(`Memproses batch ${Math.floor(i / batchSize) + 1}...`);
                         
-                        for (const feature of chunk) {
-                            try {
-                                const props = feature.properties;
-                                const coords = feature.geometry.coordinates;
-                                
-                                if (!props.name) {
-                                    log(`[${feature.id}] Dilewati: Tidak ada nama`);
-                                    continue;
-                                }
+                        chunk.forEach(feature => {
+                            const props = feature.properties;
+                            const coords = feature.geometry.coordinates;
 
-                                // Data dasar dari OSM
+                            if (props.name) { // Hanya impor jika ada nama
                                 const dataToSave = {
                                     nama: props.name,
-                                    alamat: props['addr:street'] || props.address || '',
+                                    alamat: props.address || '',
                                     kota: props['addr:city'] || '',
-                                    provinsi: props['addr:province'] || props['addr:state'] || '',
-                                    lat: coords[1],
-                                    lon: coords[0],
-                                    deskripsi: props.description || '',
-                                    imageUrl: props['wikimedia_commons'] || '',
-                                    sumber: "OSM"
+                                    provinsi: props['addr:state'] || '',
+                                    lat: coords[1], // Latitude
+                                    lon: coords[0], // Longitude
+                                    deskripsi: '',
+                                    imageUrl: ''
                                 };
-
-                                // Jika ada referensi Wikidata, ambil data tambahan
-                                if (props.wikidata) {
-                                    log(`[${feature.id}] Mengambil data Wikidata: ${props.wikidata}`);
-                                    const wdData = await getWikidata(props.wikidata);
-                                    
-                                    if (wdData.description) dataToSave.deskripsi = wdData.description;
-                                    if (wdData.image) dataToSave.imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(wdData.image)}`;
-                                    if (wdData.website) dataToSave.website = wdData.website;
-                                    dataToSave.sumber = "OSM + Wikidata";
-                                }
-
-                                // Simpan ke Firestore
-                                const docRef = doc(collection(db, 'klenteng'), feature.id.toString());
-                                batch.set(docRef, dataToSave);
-                                processed++;
-                            } catch (error) {
-                                log(`[${feature.id}] Error: ${error.message}`);
+                                
+                                // Buat referensi dokumen baru dan tambahkan ke batch
+                                const docRef = collection(db, 'klenteng');
+                                batch.set(doc(docRef), dataToSave);
                             }
-                        }
+                        });
 
                         await batch.commit();
-                        log(`Batch ${Math.floor(i / batchSize) + 1} selesai.`);
+                        log(`Batch ${Math.floor(i / batchSize) + 1} berhasil diimpor.`);
                     }
 
-                    log(`SELESAI! ${processed} data berhasil diimpor.`);
+                    log('SELESAI! Semua data telah berhasil diimpor ke Firestore.');
                 } catch (error) {
-                    log(`Error utama: ${error.message}`);
+                    log(`Error: ${error.message}`);
                     console.error(error);
                 } finally {
                     importBtn.disabled = false;
                     importBtn.textContent = 'Mulai Impor';
-                    progressDiv.textContent = '';
                 }
             };
             reader.readAsText(file);
