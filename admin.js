@@ -1,4 +1,4 @@
-// admin.js (Versi Lengkap dengan Perbaikan)
+// admin.js (Versi Lengkap dengan Perbaikan Final)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -14,20 +14,21 @@ const firebaseConfig = {
   appId: "1:416766280539:web:c40c1f7903d87b0558507e",
   measurementId: "G-M21P3MZN96"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const adminContent = document.getElementById('admin-content');
-const loadingMessage = document.getElementById('loading-message');
-
 // PENJAGA HALAMAN ADMIN
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        loadingMessage.style.display = 'none';
-        adminContent.style.display = 'block';
-        initCMS(); 
+        document.getElementById('loading-message').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        // Pastikan DOM sudah siap sebelum menjalankan initCMS
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCMS);
+        } else {
+            initCMS();
+        }
     } else {
         window.location.replace('login.html');
     }
@@ -48,7 +49,6 @@ function initCMS() {
 
     // --- FUNGSI UNTUK MEMUAT SEMUA DATA KE TABEL ---
     async function loadAllData() {
-        // Mengurutkan berdasarkan nama agar lebih rapi
         const q = query(collection(db, "klenteng"), orderBy("nama"));
         const querySnapshot = await getDocs(q);
         allData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
