@@ -2,7 +2,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// TODO: Ganti dengan konfigurasi proyek Firebase Anda
+console.log("app.js: Skrip dimulai."); // LOG 1
+
 const firebaseConfig = {
   apiKey: "AIzaSyDnE-CN7YpFXGUh7qsGjsg8X8HL_dNgRDQ",
   authDomain: "info-klenteng.firebaseapp.com",
@@ -16,57 +17,57 @@ const firebaseConfig = {
 // Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+console.log("app.js: Firebase diinisialisasi."); // LOG 2
 
 // === LOGIKA UNTUK HALAMAN UTAMA (index.html) ===
-
 let semuaKlenteng = [];
-let map; // BARU: Variabel untuk menyimpan objek peta
-let markers = []; // BARU: Array untuk menyimpan semua marker
+let map; 
+let markers = []; 
 
 const cardContainer = document.querySelector('.card-container');
 const searchBar = document.getElementById('search-bar');
 const mapContainer = document.getElementById('map');
 
-// Cek jika elemen-elemen untuk halaman utama ada
 if (cardContainer && searchBar && mapContainer) {
-    // BARU: Inisialisasi Peta
+    console.log("app.js: Berada di Halaman Utama. Memulai peta dan memuat data."); // LOG 3
     initMap();
-    
     loadKlentengList();
 
     searchBar.addEventListener('input', (e) => {
         const kataKunci = e.target.value.toLowerCase();
-        const hasilFilter = semuaKlenteng.filter(klenteng => {
-            return klenteng.nama.toLowerCase().includes(kataKunci) || klenteng.kota.toLowerCase().includes(kataKunci);
-        });
+        const hasilFilter = semuaKlenteng.filter(klenteng => 
+            klenteng.nama.toLowerCase().includes(kataKunci) || klenteng.kota.toLowerCase().includes(kataKunci)
+        );
         displayKlenteng(hasilFilter);
     });
 }
 
-// BARU: Fungsi untuk inisialisasi peta
 function initMap() {
-    map = L.map('map').setView([-2.5489, 118.0149], 5); // Set view ke tengah Indonesia
+    map = L.map('map').setView([-2.5489, 118.0149], 5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
+    console.log("app.js: Peta berhasil diinisialisasi."); // LOG 4
 }
 
 async function loadKlentengList() {
     try {
+        console.log("app.js: Mencoba mengambil data dari Firestore..."); // LOG 5
         const querySnapshot = await getDocs(collection(db, "klenteng"));
         semuaKlenteng = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log(`app.js: Berhasil mengambil ${semuaKlenteng.length} data.`); // LOG 6
+        console.log("Data pertama:", semuaKlenteng[0]); // LOG 7: Melihat data pertama
         displayKlenteng(semuaKlenteng);
     } catch (error) {
-        console.error("Error loading klenteng list: ", error);
-        cardContainer.innerHTML = "<p>Gagal memuat data. Silakan coba lagi nanti.</p>";
+        console.error("app.js: Gagal mengambil data dari Firestore!", error); // LOG ERROR
+        cardContainer.innerHTML = "<p>Gagal memuat data. Cek konsol untuk error.</p>";
     }
 }
 
 function displayKlenteng(daftarKlenteng) {
+    console.log(`app.js: Menampilkan ${daftarKlenteng.length} klenteng.`); // LOG 8
     cardContainer.innerHTML = '';
-    
-    // BARU: Hapus marker lama dari peta
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
 
@@ -76,21 +77,18 @@ function displayKlenteng(daftarKlenteng) {
     }
 
     daftarKlenteng.forEach(klenteng => {
-        // Tampilkan kartu
         const card = createKlentengCard(klenteng, klenteng.id);
         cardContainer.innerHTML += card;
 
-        // BARU: Tambahkan marker ke peta jika ada koordinat
         if (klenteng.lat && klenteng.lon) {
             const marker = L.marker([klenteng.lat, klenteng.lon]).addTo(map);
-            // Tambahkan popup dengan link ke halaman detail
             marker.bindPopup(`<b>${klenteng.nama}</b><br><a href="detail.html?id=${klenteng.id}">Lihat Detail</a>`);
-            markers.push(marker); // Simpan marker ke array
+            markers.push(marker);
         }
     });
 }
 
-// ... Sisa kode (createKlentengCard, logika halaman detail) tetap sama ...
+// ... Sisa kode tidak berubah ...
 function createKlentengCard(data, id) {
     return `
         <a href="detail.html?id=${id}" style="text-decoration: none; color: inherit;">
@@ -106,6 +104,7 @@ function createKlentengCard(data, id) {
 }
 
 // === LOGIKA UNTUK HALAMAN DETAIL (detail.html) ===
+// ... (Kode untuk halaman detail tetap sama) ...
 const detailHeader = document.querySelector('.detail-header');
 if (detailHeader) {
     const params = new URLSearchParams(window.location.search);
@@ -118,6 +117,7 @@ if (detailHeader) {
 }
 
 async function loadKlentengDetail(id) {
+    // ... (Fungsi ini tetap sama) ...
     try {
         const docRef = doc(db, "klenteng", id);
         const docSnap = await getDoc(docRef);
@@ -142,7 +142,7 @@ async function loadKlentengDetail(id) {
                 });
             });
 
-            btnMaps.href = `https://maps.google.com/?q=${encodeURIComponent(data.alamat)}`;
+            btnMaps.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.alamat)}`;
 
         } else {
             document.querySelector('main.container').innerHTML = "<h1>Error: Klenteng tidak ditemukan.</h1><p>Data untuk ID ini tidak ada.</p>";
