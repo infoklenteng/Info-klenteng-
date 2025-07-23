@@ -30,7 +30,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyArH0RoIFSblsanJiTKqNdCRqeU31fHjGw",
+  apiKey: "AIzaSyDnE-CN7YpFXGUh7qsGjsg8X8HL_dNgRDQ",
   authDomain: "info-klenteng.firebaseapp.com",
   projectId: "info-klenteng",
   storageBucket: "info-klenteng.firebasestorage.app",
