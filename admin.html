@@ -5,18 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Info Klenteng</title>
     <link rel="stylesheet" href="style.css">
-   <script src="https://cdn.tiny.cloud/1/ng3z0e1k5c96r38q3546bwty336qerrtyrdugwvlysqyhpkb/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/ng3z0e1k5c96r38q3546bwty336qerrtyrdugwvlysqyhpkb/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
         /* Style tambahan khusus untuk halaman admin */
-        .admin-container { padding: 2rem; max-width: 900px; margin: auto; }
+        body { background-color: #f4f4f4; }
+        .admin-container { padding: 2rem; max-width: 900px; margin: 2rem auto; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-        .form-group input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
-        .submit-btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #333; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .submit-btn { width: 100%; background-color: var(--primary-color); color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
+        .submit-btn:hover { background-color: #e74c3c; }
     </style>
 </head>
 <body>
-    <div class="admin-container">
+    <h2 id="loading-message" style="text-align: center; margin-top: 100px;">Memverifikasi sesi...</h2>
+
+    <div class="admin-container" id="admin-content" style="display: none;">
         <h1>CMS Info Klenteng</h1>
         <form id="klenteng-form">
             <div class="form-group">
@@ -45,34 +49,19 @@
             </div>
             
             <div class="form-group">
-                <label for="deskripsi">Deskripsi (dengan gambar)</label>
+                <label for="main-image">Gambar Utama (Thumbnail)</label>
+                <input type="file" id="main-image">
+            </div>
+
+            <div class="form-group">
+                <label for="deskripsi">Deskripsi Lengkap (dengan gambar)</label>
                 <textarea id="deskripsi"></textarea>
             </div>
 
             <button type="submit" class="submit-btn">Simpan Data</button>
         </form>
     </div>
-<form id="klenteng-form">
-    <div class="form-group">
-        <label for="main-image">Gambar Utama</label>
-        <input type="file" id="main-image">
-    </div>
-
-    <div class="form-group">
-        <label for="deskripsi">Deskripsi (dengan gambar)</label>
-        <textarea id="deskripsi"></textarea>
-    </div>
-
-    <button type="submit" class="submit-btn">Simpan Data</button>
-</form>
     
- <body>
-    <div class="admin-container" id="admin-content" style="display: none;">
-        </div>
-    <h2 id="loading-message" style="text-align: center; margin-top: 100px;">Memverifikasi sesi...</h2>
-    
-    <script src="admin.js" type="module"></script>
-</body>   
     <script src="admin.js" type="module"></script>
 </body>
 </html>
