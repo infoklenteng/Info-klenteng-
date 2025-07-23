@@ -1,8 +1,8 @@
-// admin.js (Versi Lengkap dengan Fitur Edit)
+// admin.js (Versi Lengkap dengan Perbaikan)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Ganti dengan firebaseConfig dari PROYEK BARU Anda
 const firebaseConfig = {
@@ -22,6 +22,7 @@ const db = getFirestore(app);
 const adminContent = document.getElementById('admin-content');
 const loadingMessage = document.getElementById('loading-message');
 
+// PENJAGA HALAMAN ADMIN
 onAuthStateChanged(auth, (user) => {
     if (user) {
         loadingMessage.style.display = 'none';
@@ -32,8 +33,9 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// Fungsi utama yang menjalankan semua logika CMS
 function initCMS() {
-    let allData = []; // Menyimpan semua data dari Firestore
+    let allData = []; 
     const tableBody = document.getElementById('table-body');
     const searchInput = document.getElementById('search-input');
     const klentengForm = document.getElementById('klenteng-form');
@@ -42,10 +44,13 @@ function initCMS() {
     const clearFormBtn = document.getElementById('clear-form-btn');
     const imageInput = document.getElementById('main-image');
     const currentImageUrlP = document.getElementById('current-image-url');
+    const submitButton = klentengForm.querySelector('button[type="submit"]');
 
     // --- FUNGSI UNTUK MEMUAT SEMUA DATA KE TABEL ---
     async function loadAllData() {
-        const querySnapshot = await getDocs(collection(db, "klenteng"));
+        // Mengurutkan berdasarkan nama agar lebih rapi
+        const q = query(collection(db, "klenteng"), orderBy("nama"));
+        const querySnapshot = await getDocs(q);
         allData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderTable(allData);
     }
@@ -95,7 +100,8 @@ function initCMS() {
         document.getElementById('status').value = data.status || 'draft';
         tinymce.get('deskripsi').setContent(data.deskripsi || '');
         currentImageUrlP.textContent = `Gambar saat ini: ${data.imageUrl ? data.imageUrl.substring(0, 50) + '...' : 'Tidak ada'}`;
-        window.scrollTo(0, document.body.scrollHeight); // Auto scroll ke bawah
+        submitButton.textContent = 'Update Data';
+        window.scrollTo(0, document.body.scrollHeight);
     }
 
     // --- FUNGSI UNTUK MEMBERSIHKAN FORMULIR ---
@@ -105,26 +111,26 @@ function initCMS() {
         docIdInput.value = '';
         tinymce.get('deskripsi').setContent('');
         currentImageUrlP.textContent = '';
+        submitButton.textContent = 'Simpan Data';
     }
     clearFormBtn.addEventListener('click', clearForm);
 
     // --- LOGIKA FORM SUBMIT (BISA UNTUK TAMBAH & UPDATE) ---
     klentengForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Menyimpan...';
 
         const docId = docIdInput.value;
-        let imageUrl = allData.find(item => item.id === docId)?.imageUrl || ''; // Ambil URL lama
+        let imageUrl = docId ? (allData.find(item => item.id === docId)?.imageUrl || '') : '';
 
         const file = imageInput.files[0];
         if (file) {
-            imageUrl = await uploadMainImage(file); // Upload jika ada gambar baru
+            imageUrl = await uploadMainImage(file);
             if (!imageUrl) {
                 alert('Upload gambar gagal!');
                 submitButton.disabled = false;
-                submitButton.textContent = 'Simpan Data';
+                submitButton.textContent = docId ? 'Update Data' : 'Simpan Data';
                 return;
             }
         }
@@ -143,23 +149,21 @@ function initCMS() {
 
         try {
             if (docId) {
-                // Jika ada ID, berarti ini mode UPDATE
                 const docRef = doc(db, "klenteng", docId);
                 await updateDoc(docRef, dataToSave);
                 alert('Data berhasil diperbarui!');
             } else {
-                // Jika tidak ada ID, berarti ini mode TAMBAH BARU
                 await addDoc(collection(db, "klenteng"), dataToSave);
                 alert('Data baru berhasil disimpan!');
             }
-            loadAllData(); // Muat ulang tabel
-            clearForm(); // Bersihkan form
+            loadAllData();
+            clearForm();
         } catch (error) {
             console.error("Error saving document: ", error);
             alert("Gagal menyimpan data.");
         } finally {
             submitButton.disabled = false;
-            submitButton.textContent = 'Simpan Data';
+            submitButton.textContent = docId ? 'Update Data' : 'Simpan Data';
         }
     });
     
@@ -167,8 +171,36 @@ function initCMS() {
     const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/duw0uljnq/image/upload';
     const CLOUDINARY_UPLOAD_PRESET = 'info-klenteng';
 
-    async function uploadMainImage(file) { /* ... fungsi ini tetap sama ... */ }
-    const tinymce_image_upload_handler = (blobInfo) => new Promise((resolve, reject) => { /* ... fungsi ini tetap sama ... */ });
+    async function uploadMainImage(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        try {
+            const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('Upload gagal');
+            const data = await response.json();
+            return data.secure_url;
+        } catch (error) {
+            console.error('Gagal upload gambar utama:', error);
+            return null;
+        }
+    }
+
+    const tinymce_image_upload_handler = (blobInfo) => new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('file', blobInfo.blob(), blobInfo.filename());
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        fetch(CLOUDINARY_URL, { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(result => {
+                if (result.secure_url) {
+                    resolve(result.secure_url);
+                } else {
+                    reject('Upload gagal');
+                }
+            })
+            .catch(() => reject('Upload gagal'));
+    });
     
     tinymce.init({
         selector: '#deskripsi',
