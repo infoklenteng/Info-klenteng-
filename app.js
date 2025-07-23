@@ -4,15 +4,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, getDocs, doc, getDoc, enableNetwork } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyArH0RoIFSblsanJiTKqNdCRqeU31fHjGw", // API Key Anda
-  authDomain: "info-klenteng.firebaseapp.com",
-  projectId: "info-klenteng",
-  storageBucket: "info-klenteng.firebasestorage.app",
-  messagingSenderId: "1005532464216",
-  appId: "1:1005532464216:web:8b9ce3edca8325e64a762d",
-  measurementId: "G-XMNTWC5HQD"
+  apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
+  authDomain: "info-klenteng-df46f.firebaseapp.com",
+  projectId: "info-klenteng-df46f",
+  storageBucket: "info-klenteng-df46f.firebasestorage.app",
+  messagingSenderId: "416766280539",
+  appId: "1:416766280539:web:c40c1f7903d87b0558507e",
+  measurementId: "G-M21P3MZN96"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 enableNetwork(db); // Paksa koneksi online
