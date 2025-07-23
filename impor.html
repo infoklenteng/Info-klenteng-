@@ -40,82 +40,94 @@
   measurementId: "G-M21P3MZN96"
 };
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-      import { getFirestore, collection, addDoc, writeBatch, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        const fileInput = document.getElementById('geojson-file');
-        const importBtn = document.getElementById('import-btn');
-        const logDiv = document.getElementById('log');
+     importBtn.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if (!file) {
+        log('Error: Silakan pilih file GeoJSON terlebih dahulu.');
+        return;
+    }
 
-        function log(message) {
-            logDiv.innerHTML += `<p>> ${message}</p>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
+    importBtn.disabled = true;
+    importBtn.textContent = 'Memproses...';
+    log('Memulai proses impor...');
 
-        importBtn.addEventListener('click', async () => {
-            const file = fileInput.files[0];
-            if (!file) {
-                log('Error: Silakan pilih file terlebih dahulu.');
-                return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const geojsonData = JSON.parse(event.target.result);
+            const features = geojsonData.features;
+            log(`Ditemukan ${features.length} lokasi di dalam file.`);
+            
+            const batchSize = 400;
+            let processed = 0;
+            let skipped = 0;
+
+            for (let i = 0; i < features.length; i += batchSize) {
+                const batch = writeBatch(db);
+                const chunk = features.slice(i, i + batchSize);
+                
+                progressDiv.textContent = `Memproses ${i + 1}-${Math.min(i + batchSize, features.length)} dari ${features.length}...`;
+                
+                for (const feature of chunk) {
+                    try {
+                        const props = feature.properties;
+                        
+                        // Validasi data minimal
+                        if (!props.name || !feature.geometry || !feature.geometry.coordinates) {
+                            log(`[${feature.id || 'unknown'}] Dilewati: Data tidak lengkap`);
+                            skipped++;
+                            continue;
+                        }
+
+                        const coords = feature.geometry.coordinates;
+                        
+                        // Data dasar dari OSM
+                        const dataToSave = {
+                            nama: props.name || 'Tidak Diketahui',
+                            alamat: props['addr:street'] || props.address || '',
+                            kota: props['addr:city'] || '',
+                            provinsi: props['addr:province'] || props['addr:state'] || '',
+                            lat: coords[1],
+                            lon: coords[0],
+                            deskripsi: props.description || '',
+                            imageUrl: props['wikimedia_commons'] || '',
+                            sumber: "OSM",
+                            tipe: feature.geometry.type || 'node',
+                            osm_id: feature.id || null,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        // Generate ID dokumen yang aman
+                        const docId = `osm_${feature.id}`.replace(/\//g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+                        
+                        const docRef = doc(db, 'klenteng', docId);
+                        batch.set(docRef, dataToSave);
+                        processed++;
+                        
+                    } catch (error) {
+                        log(`[${feature.id || 'unknown'}] Error: ${error.message}`);
+                        skipped++;
+                    }
+                }
+
+                try {
+                    await batch.commit();
+                    log(`Batch ${Math.floor(i / batchSize) + 1} selesai (${processed} data, ${skipped} dilewati).`);
+                } catch (batchError) {
+                    log(`Error commit batch: ${batchError.message}`);
+                }
             }
 
-            importBtn.disabled = true;
-            importBtn.textContent = 'Memproses...';
-
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const geojsonData = JSON.parse(event.target.result);
-                    const features = geojsonData.features;
-                    log(`Ditemukan ${features.length} lokasi di dalam file.`);
-                    
-                    // Firestore hanya mengizinkan 500 operasi tulis per batch
-                    const batchSize = 400; 
-                    for (let i = 0; i < features.length; i += batchSize) {
-                        const batch = writeBatch(db);
-                        const chunk = features.slice(i, i + batchSize);
-                        
-                        log(`Memproses batch ${Math.floor(i / batchSize) + 1}...`);
-                        
-                        chunk.forEach(feature => {
-                            const props = feature.properties;
-                            const coords = feature.geometry.coordinates;
-
-                            if (props.name) { // Hanya impor jika ada nama
-                                const dataToSave = {
-                                    nama: props.name,
-                                    alamat: props.address || '',
-                                    kota: props['addr:city'] || '',
-                                    provinsi: props['addr:state'] || '',
-                                    lat: coords[1], // Latitude
-                                    lon: coords[0], // Longitude
-                                    deskripsi: '',
-                                    imageUrl: ''
-                                };
-                                
-                                // Buat referensi dokumen baru dan tambahkan ke batch
-                                const docRef = collection(db, 'klenteng');
-                                batch.set(doc(docRef), dataToSave);
-                            }
-                        });
-
-                        await batch.commit();
-                        log(`Batch ${Math.floor(i / batchSize) + 1} berhasil diimpor.`);
-                    }
-
-                    log('SELESAI! Semua data telah berhasil diimpor ke Firestore.');
-                } catch (error) {
-                    log(`Error: ${error.message}`);
-                    console.error(error);
-                } finally {
-                    importBtn.disabled = false;
-                    importBtn.textContent = 'Mulai Impor';
-                }
-            };
-            reader.readAsText(file);
-        });
-    </script>
-</body>
-</html>
+            log(`SELESAI! ${processed} data berhasil diimpor, ${skipped} data dilewati.`);
+            
+        } catch (error) {
+            log(`Error utama: ${error.message}`);
+            console.error('Error detail:', error);
+        } finally {
+            importBtn.disabled = false;
+            importBtn.textContent = 'Mulai Impor';
+            progressDiv.textContent = '';
+        }
+    };
+    reader.readAsText(file);
+});
