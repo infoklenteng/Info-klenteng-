@@ -6,13 +6,12 @@ import { getFirestore, collection, getDocs, doc, getDoc, enableNetwork, query, l
 
 // Ganti dengan firebaseConfig dari PROYEK BARU Anda
 const firebaseConfig = {
-  apiKey: "AIzaSyD20pmKLS-camDW4Fupu23qwzPK6R1AplY",
-  authDomain: "info-klenteng-df46f.firebaseapp.com",
-  projectId: "info-klenteng-df46f",
-  storageBucket: "info-klenteng-df46f.firebasestorage.app",
-  messagingSenderId: "416766280539",
-  appId: "1:416766280539:web:c40c1f7903d87b0558507e",
-  measurementId: "G-M21P3MZN96"
+    apiKey: "GANTI_DENGAN_API_KEY_ANDA",
+    authDomain: "GANTI_DENGAN_AUTH_DOMAIN_ANDA",
+    projectId: "GANTI_DENGAN_PROJECT_ID_ANDA",
+    storageBucket: "GANTI_DENGAN_STORAGE_BUCKET_ANDA",
+    messagingSenderId: "GANTI_DENGAN_MESSAGING_SENDER_ID_ANDA",
+    appId: "GANTI_DENGAN_APP_ID_ANDA"
 };
 
 const app = initializeApp(firebaseConfig);
