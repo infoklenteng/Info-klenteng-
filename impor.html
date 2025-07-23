@@ -40,82 +40,91 @@
   measurementId: "G-M21P3MZN96"
 };
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-      import { getFirestore, collection, addDoc, writeBatch, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        const fileInput = document.getElementById('geojson-file');
-        const importBtn = document.getElementById('import-btn');
-        const logDiv = document.getElementById('log');
-
-        function log(message) {
-            logDiv.innerHTML += `<p>> ${message}</p>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+         importBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+            log('Error: Silakan pilih file GeoJSON terlebih dahulu.');
+            return;
         }
 
-        importBtn.addEventListener('click', async () => {
-            const file = fileInput.files[0];
-            if (!file) {
-                log('Error: Silakan pilih file terlebih dahulu.');
-                return;
-            }
+        importBtn.disabled = true;
+        importBtn.textContent = 'Memproses...';
+        log('Memulai proses impor...');
 
-            importBtn.disabled = true;
-            importBtn.textContent = 'Memproses...';
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const geojsonData = JSON.parse(event.target.result);
+                const features = geojsonData.features;
+                log(`Ditemukan ${features.length} lokasi di dalam file.`);
+                
+                const batchSize = 400;
+                let processed = 0;
 
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const geojsonData = JSON.parse(event.target.result);
-                    const features = geojsonData.features;
-                    log(`Ditemukan ${features.length} lokasi di dalam file.`);
+                for (let i = 0; i < features.length; i += batchSize) {
+                    const batch = writeBatch(db);
+                    const chunk = features.slice(i, i + batchSize);
                     
-                    // Firestore hanya mengizinkan 500 operasi tulis per batch
-                    const batchSize = 400; 
-                    for (let i = 0; i < features.length; i += batchSize) {
-                        const batch = writeBatch(db);
-                        const chunk = features.slice(i, i + batchSize);
-                        
-                        log(`Memproses batch ${Math.floor(i / batchSize) + 1}...`);
-                        
-                        chunk.forEach(feature => {
+                    progressDiv.textContent = `Memproses ${i + 1}-${Math.min(i + batchSize, features.length)} dari ${features.length}...`;
+                    
+                    for (const feature of chunk) {
+                        try {
                             const props = feature.properties;
                             const coords = feature.geometry.coordinates;
-
-                            if (props.name) { // Hanya impor jika ada nama
-                                const dataToSave = {
-                                    nama: props.name,
-                                    alamat: props.address || '',
-                                    kota: props['addr:city'] || '',
-                                    provinsi: props['addr:state'] || '',
-                                    lat: coords[1], // Latitude
-                                    lon: coords[0], // Longitude
-                                    deskripsi: '',
-                                    imageUrl: ''
-                                };
-                                
-                                // Buat referensi dokumen baru dan tambahkan ke batch
-                                const docRef = collection(db, 'klenteng');
-                                batch.set(doc(docRef), dataToSave);
+                            
+                            if (!props.name) {
+                                log(`[${feature.id}] Dilewati: Tidak ada nama`);
+                                continue;
                             }
-                        });
 
-                        await batch.commit();
-                        log(`Batch ${Math.floor(i / batchSize) + 1} berhasil diimpor.`);
+                            // Data dasar dari OSM
+                            const dataToSave = {
+                                nama: props.name,
+                                alamat: props['addr:street'] || props.address || '',
+                                kota: props['addr:city'] || '',
+                                provinsi: props['addr:province'] || props['addr:state'] || '',
+                                lat: coords[1],
+                                lon: coords[0],
+                                deskripsi: props.description || '',
+                                imageUrl: props['wikimedia_commons'] || '',
+                                sumber: "OSM"
+                            };
+
+                            // Jika ada referensi Wikidata, ambil data tambahan
+                            if (props.wikidata) {
+                                log(`[${feature.id}] Mengambil data Wikidata: ${props.wikidata}`);
+                                const wdData = await getWikidata(props.wikidata);
+                                
+                                if (wdData.description) dataToSave.deskripsi = wdData.description;
+                                if (wdData.image) dataToSave.imageUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(wdData.image)}`;
+                                if (wdData.website) dataToSave.website = wdData.website;
+                                dataToSave.sumber = "OSM + Wikidata";
+                            }
+
+                            // PERBAIKAN: Gunakan ID yang valid (hapus garis miring jika ada)
+                            const docId = feature.id.toString().replace(/\//g, '_');
+                            const docRef = doc(collection(db, 'klenteng'), docId);
+                            batch.set(docRef, dataToSave);
+                            processed++;
+                        } catch (error) {
+                            log(`[${feature.id}] Error: ${error.message}`);
+                        }
                     }
 
-                    log('SELESAI! Semua data telah berhasil diimpor ke Firestore.');
-                } catch (error) {
-                    log(`Error: ${error.message}`);
-                    console.error(error);
-                } finally {
-                    importBtn.disabled = false;
-                    importBtn.textContent = 'Mulai Impor';
+                    await batch.commit();
+                    log(`Batch ${Math.floor(i / batchSize) + 1} selesai.`);
                 }
-            };
-            reader.readAsText(file);
-        });
-    </script>
-</body>
-</html>
+
+                log(`SELESAI! ${processed} data berhasil diimpor.`);
+            } catch (error) {
+                log(`Error utama: ${error.message}`);
+                console.error(error);
+            } finally {
+                importBtn.disabled = false;
+                importBtn.textContent = 'Mulai Impor';
+                progressDiv.textContent = '';
+            }
+        };
+        reader.readAsText(file);
+    });
+</script>
