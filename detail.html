@@ -3,49 +3,434 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Klenteng - Info Klenteng</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="head_global.js" defer></script>
+    <title>Detail Klenteng Sam Po Kong - Info Klenteng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f8f8;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, #8b0000, #a52a2a);
+            color: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+        }
+
+        .logo-image {
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid gold;
+        }
+
+        .logo-container h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .main-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .main-nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 5%;
+        }
+
+        .detail-header {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .detail-header h1 {
+            color: #8b0000;
+            margin-bottom: 1rem;
+            font-size: 2.2rem;
+        }
+
+        .detail-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b0000, #a52a2a);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(139, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #8b0000;
+            border: 2px solid #8b0000;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f0f0;
+            transform: translateY(-2px);
+        }
+
+        .detail-image {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .detail-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+
+        .detail-content h2 {
+            color: #8b0000;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e0c9c9;
+        }
+
+        .detail-content p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .share-section {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .share-section h2 {
+            color: #8b0000;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .social-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.8rem;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .social-icon:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .social-icon.facebook { background: linear-gradient(135deg, #3b5998, #2d4373); }
+        .social-icon.twitter { background: linear-gradient(135deg, #1da1f2, #0c85d0); }
+        .social-icon.whatsapp { background: linear-gradient(135deg, #25d366, #128c7e); }
+        .social-icon.instagram { background: linear-gradient(135deg, #405de6, #833ab4, #c13584); }
+        .social-icon.link { background: linear-gradient(135deg, #0077b5, #005582); }
+
+        .main-footer {
+            background: linear-gradient(135deg, #8b0000, #a52a2a);
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        .footer-dragon {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            color: gold;
+        }
+
+        .main-footer p {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(150%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+
+            .main-nav {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: #8b0000;
+                flex-direction: column;
+                align-items: center;
+                padding: 1rem 0;
+                clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+                transition: clip-path 0.4s ease;
+            }
+
+            .main-nav.active {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            }
+
+            .main-nav a {
+                width: 90%;
+                text-align: center;
+                padding: 1rem;
+                margin: 0.25rem 0;
+            }
+
+            .detail-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
     <header class="main-header">
         <a href="index.html" class="logo-container">
-            <img src="logo_header.jpg" alt="Info Klenteng Logo" class="logo-image">
-        
+            <img src="https://via.placeholder.com/50x50.png?text=IK" alt="Info Klenteng Logo" class="logo-image">
+            <h1>Info Klenteng</h1>
         </a>
-        <nav class="main-nav">
+        <button class="hamburger" id="hamburger">
+            <i class="fas fa-bars"></i>
+        </button>
+        <nav class="main-nav" id="mainNav">
             <a href="#">Tentang Kami</a>
             <a href="#">Kontak</a>
+            <a href="#">Daftar Klenteng</a>
+            <a href="#">Acara</a>
         </nav>
     </header>
 
     <main class="container">
         <div class="detail-header">
-            <h1>Memuat data...</h1>
-            <p></p>
+            <h1>Klenteng Sam Po Kong</h1>
+            <p>Jl. Simongan No.129, Bongsari, Kec. Semarang Barat, Kota Semarang, Jawa Tengah 50148</p>
         </div>
 
         <div class="action-buttons">
-            <a href="#" class="btn btn-primary">Salin Alamat</a>
-            <a href="#" target="_blank" class="btn btn-secondary">Buka di Google Maps</a>
+            <a href="#" class="btn btn-primary" id="copyAddressBtn">
+                <i class="fas fa-copy"></i> Salin Alamat
+            </a>
+            <a href="https://maps.app.goo.gl/example" target="_blank" class="btn btn-secondary">
+                <i class="fas fa-map-marked-alt"></i> Buka di Google Maps
+            </a>
         </div>
         
-        <img src="https://via.placeholder.com/800x400.png?text=Memuat+Gambar..." alt="Gambar Klenteng" class="detail-image" style="width:100%; border-radius:8px; margin-bottom: 2rem;">
+        <img src="https://images.unsplash.com/photo-1585506942812-e72b29cef752?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80" alt="Klenteng Sam Po Kong" class="detail-image">
 
         <div class="detail-content">
             <h2>Detail</h2>
-            <p>Memuat deskripsi...</p>
+            <p>Klenteng Sam Po Kong atau Gedung Batu adalah sebuah petilasan bekas tempat persinggahan dan pendaratan pertama seorang Laksamana Tiongkok beragama Islam yang bernama Zheng He / Cheng Ho.</p>
+            <p>Bangunan ini didirikan untuk menghormati Cheng Ho yang datang ke Semarang sekitar tahun 1400-an. Di tempat ini terdapat patung Cheng Ho. Selain itu, tempat ini juga digunakan oleh pemeluk agama Buddha untuk beribadah.</p>
+            <p>Kompleks Sam Po Kong memiliki beberapa bangunan utama seperti Gua Sam Po Kong, Kelenteng Thoo Tee Kong, Kelenteng Kyai Juru Mudi, dan Kelenteng Kyai Jangkar. Setiap bangunan memiliki sejarah dan fungsi masing-masing dalam tradisi masyarakat Tionghoa di Semarang.</p>
+        </div>
+
+        <div class="share-section">
+            <h2>Bagikan Informasi Ini</h2>
+            <div class="social-icons">
+                <a href="#" class="social-icon facebook">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="social-icon twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="social-icon whatsapp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <a href="#" class="social-icon instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="social-icon link">
+                    <i class="fas fa-link"></i>
+                </a>
+            </div>
         </div>
     </main>
 
+    <div class="notification" id="notification">
+        Alamat berhasil disalin ke clipboard!
+    </div>
+
     <footer class="main-footer">
-        <div class="footer-dragon"></div>
+        <div class="footer-dragon">
+            <i class="fas fa-dragon"></i>
+        </div>
         <p>&copy; 2025 Info Klenteng. Dibuat dengan semangat Merah Putih.</p>
         <p>Atribusi data peta kepada kontributor OpenStreetMap.</p>
     </footer>
 
-    <script src="app.js" type="module"></script>
+    <script>
+        // Hamburger menu untuk mobile
+        const hamburger = document.getElementById('hamburger');
+        const mainNav = document.getElementById('mainNav');
+
+        hamburger.addEventListener('click', () => {
+            mainNav.classList.toggle('active');
+        });
+
+        // Fungsi salin alamat
+        const copyAddressBtn = document.getElementById('copyAddressBtn');
+        const notification = document.getElementById('notification');
+        const address = "Jl. Simongan No.129, Bongsari, Kec. Semarang Barat, Kota Semarang, Jawa Tengah 50148";
+
+        copyAddressBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Copy alamat ke clipboard
+            navigator.clipboard.writeText(address)
+                .then(() => {
+                    // Tampilkan notifikasi
+                    notification.classList.add('show');
+                    
+                    // Sembunyikan notifikasi setelah 3 detik
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Gagal menyalin alamat: ', err);
+                    alert('Gagal menyalin alamat. Silakan salin secara manual.');
+                });
+        });
+
+        // Close menu ketika mengklik di luar area menu (opsional)
+        document.addEventListener('click', (e) => {
+            if (!mainNav.contains(e.target) && !hamburger.contains(e.target)) {
+                mainNav.classList.remove('active');
+            }
+        });
+    </script>
 
 </body>
 </html>
